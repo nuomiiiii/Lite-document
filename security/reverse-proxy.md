@@ -58,7 +58,7 @@ Nginx 位于宿主机时反代 `127.0.0.1:25774`。Nginx 位于另一个容器�
 
 ## Cloudflare Tunnel
 
-<div class="version-note"><strong>快照版</strong><span>新版后台将 Cloudflare Tunnel 放在“反向代理”下的独立页签。</span></div>
+<div class="version-note"><strong>2.1.12</strong><span>Cloudflare Tunnel 管理已纳入 2.1.12 正式版，并位于“反向代理”下的独立页签。</span></div>
 
 可在后台保存 Tunnel Token 并启动 `cloudflared`。Token 在服务端加密保存，前端只读取“是否已保存”，不会取回明文。
 

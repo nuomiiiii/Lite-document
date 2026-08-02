@@ -15,7 +15,7 @@
 
 ## 仅导出配置
 
-<div class="version-note"><strong>快照版</strong><span>配置导出用于在不携带历史监测数据时切换分支或重建实例。</span></div>
+<div class="version-note"><strong>2.1.12</strong><span>仅导出配置已纳入 2.1.12 正式版，可在不携带历史监测数据时切换分支或重建实例。</span></div>
 
 配置包保留服务器、探测任务和必要设置，不包含历史指标、延迟、丢包和流量账本。它适合：
 

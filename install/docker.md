@@ -55,7 +55,7 @@ ports:
 
 ## 内置 HTTPS 的额外映射
 
-<div class="version-note"><strong>快照版</strong><span>仅当后台已经启用内置 HTTPS 时才需要映射 HTTPS 监听端口。</span></div>
+<div class="version-note"><strong>2.1.12</strong><span>内置 HTTPS 已纳入 2.1.12 正式版；仅当后台已经启用该功能时才需要映射 HTTPS 监听端口。</span></div>
 
 默认 HTTPS 端口为 `35938`，示例：
 

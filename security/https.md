@@ -1,6 +1,6 @@
 # 内置 HTTPS
 
-<div class="version-note"><strong>快照版</strong><span>内置 HTTPS 当前属于快照功能。稳定版用户可先使用 Nginx、Caddy、1Panel 或 Cloudflare Tunnel。</span></div>
+<div class="version-note"><strong>2.1.12</strong><span>内置 HTTPS 已纳入 2.1.12 正式版，默认保持关闭，由管理员完成证书与端口配置后手动启用。</span></div>
 
 内置 HTTPS 同时保护 Web 页面、后台 API、Agent 上报、导入导出、任务下发、文件管理、终端和实时连接。前端会随页面协议使用 `HTTPS` 和 `WSS`，避免混合内容。
 

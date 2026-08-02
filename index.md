@@ -31,4 +31,4 @@ features:
     details: 主题安装、公共数据兼容、主题市场，以及开发时需要保持的字段约定。
 ---
 
-<div class="version-note"><strong>当前口径</strong><span>稳定版以 2.1.12 为基线；仅在 Snapshot 中提供的功能会在对应页面标注。</span></div>
+<div class="version-note"><strong>当前口径</strong><span>稳定版以 2.1.12 为基线；本轮快照验证的功能均已按 2.1.12 正式版口径写入手册。</span></div>
