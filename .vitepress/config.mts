@@ -65,7 +65,7 @@ export default defineConfig({
   cleanUrls: true,
   lastUpdated: true,
   head: [
-    ["link", { rel: "icon", type: "image/svg+xml", href: "/assets/komari-icon.svg?v=3" }],
+    ["link", { rel: "icon", type: "image/svg+xml", href: `${base}assets/komari-icon.svg?v=3` }],
     ["meta", { name: "theme-color", content: "#087f73" }],
   ],
   markdown: {

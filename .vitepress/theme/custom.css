@@ -61,6 +61,20 @@ body {
   height: auto;
 }
 
+.home-hero-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.home-hero-visual img {
+  display: block;
+  width: min(240px, 62vw);
+  height: auto;
+}
+
 .VPFeature {
   border-radius: 8px !important;
   border-color: var(--vp-c-divider) !important;
@@ -112,5 +126,55 @@ body {
   .vp-doc table {
     display: block;
     overflow-x: auto;
+  }
+}
+
+@media (min-width: 960px) {
+  .VPHero.has-image .container {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .VPHero.has-image .image {
+    order: 1;
+    width: 100%;
+    min-height: 0;
+    margin: 0;
+  }
+
+  .VPHero.has-image .image-container {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 1;
+    transform: none;
+  }
+
+  .home-hero-visual img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .VPHero.has-image .main {
+    order: 2;
+    width: 100%;
+    max-width: none;
+  }
+
+  .VPHero.has-image .heading {
+    display: none;
+  }
+
+  .VPHero.has-image .tagline {
+    margin: 0 auto;
+    padding-top: 24px;
+    max-width: 760px;
+    line-height: 30px;
+    font-size: 18px;
+  }
+
+  .VPHero.has-image .actions {
+    justify-content: center;
+    padding-top: 20px;
   }
 }
