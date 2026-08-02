@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { withBase } from "vitepress";
 
-const bannerSrc = withBase("/assets/komari-banner.svg?v=2");
+const bannerSrc = withBase("/assets/komari-banner.svg?v=3");
 const iconSrc = withBase("/assets/komari-icon.svg?v=3");
 </script>
 
