@@ -1,0 +1,68 @@
+# 内置 HTTPS
+
+<div class="version-note"><strong>快照版</strong><span>内置 HTTPS 当前属于快照功能。稳定版用户可先使用 Nginx、Caddy、1Panel 或 Cloudflare Tunnel。</span></div>
+
+内置 HTTPS 同时保护 Web 页面、后台 API、Agent 上报、导入导出、任务下发、文件管理、终端和实时连接。前端会随页面协议使用 `HTTPS` 和 `WSS`，避免混合内容。
+
+## 默认状态
+
+- 内置 HTTPS：关闭。
+- HTTPS 监听端口：`35938`。
+- HTTP 自动跳转：关闭。
+- 证书路径：`./data/tls/server.crt`。
+- 私钥路径：`./data/tls/server.key`。
+
+初始化安装不会强制 HTTPS，也不会在没有证书时锁死 HTTP。
+
+## 证书配置
+
+后台只接收服务器上的文件路径，不会把私钥文件内容读取后再返回浏览器。
+
+Docker 示例：
+
+```yaml
+ports:
+  - "25774:25774"
+  - "35938:35938"
+volumes:
+  - ./data:/app/data
+  - ./certs:/certs:ro
+```
+
+后台填写：
+
+```text
+证书文件：/certs/fullchain.pem
+私钥文件：/certs/privkey.pem
+```
+
+保存路径后，页面会校验证书与私钥是否匹配，并显示域名、签发者和到期时间。未启用但校验成功时显示“证书待启用”。
+
+## 启用顺序
+
+1. 把证书和私钥放在服务器或容器可读路径。
+2. 在后台填写路径和 HTTPS 端口。
+3. 保存并确认“证书待启用”及端口状态正常。
+4. 启用内置 HTTPS，直接访问 HTTPS 地址测试。
+5. 确认登录、Agent、文件、终端和主题正常。
+6. 最后再启用“HTTP 自动跳转 HTTPS”。
+
+## HTTP 自动跳转
+
+只有 HTTPS 服务已经运行且证书可用时，HTTP 请求才会使用 `308` 跳转。启用后 HTTPS 响应增加一年期 HSTS；关闭时服务会发送 `max-age=0` 撤销本功能设置的 HSTS 策略，并保留短暂的 TLS 响应时间让保存请求完成。
+
+::: warning 开启前先测试正确端口
+浏览器记住 HSTS 后，输入 HTTP 可能自动改成 HTTPS。端口写错时看起来像“HTTP 无法回退”，实际可能是浏览器访问了错误的 HTTPS 端口。
+:::
+
+## TLS 版本
+
+内置服务最低允许 TLS 1.2，同时支持 TLS 1.3。现代浏览器和系统在双方均支持时通常协商 TLS 1.3。
+
+## IPv4 与 IPv6
+
+使用 `:35938` 这类通配监听时，系统会检测 IPv4 和 IPv6 是否实际可用，并在后台分别显示监听状态。主机没有对应协议栈时，不会把不可用协议显示成已监听。
+
+## 关闭 HTTPS
+
+关闭并保存后，页面会尝试回到原 HTTP 地址。Docker 必须仍然映射 HTTP 端口 `25774`；如果只发布了 HTTPS 端口，关闭后自然没有可访问的 HTTP 入口。
