@@ -60,7 +60,7 @@ const sidebar = [
 export default defineConfig({
   base,
   lang: "zh-CN",
-  title: "Komari 文档",
+  title: "Komari Lite 文档",
   description: "nuomiiiii/komari 安装、升级、管理与开发手册",
   cleanUrls: true,
   lastUpdated: true,
@@ -73,7 +73,7 @@ export default defineConfig({
   },
   themeConfig: {
     logo: "/assets/komari-icon.svg?v=3",
-    siteTitle: "Komari 文档",
+    siteTitle: "Komari Lite 文档",
     nav: [
       { text: "首页", link: "/" },
       { text: "快速开始", link: "/guide/start" },
@@ -105,7 +105,7 @@ export default defineConfig({
     ],
     footer: {
       message: "基于 MIT 许可证发布",
-      copyright: "Komari 文档 · 部分结构参考上游项目",
+      copyright: "Komari Lite 文档 · 部分结构参考上游项目",
     },
   },
 });

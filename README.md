@@ -1,4 +1,6 @@
-# Komari 文档
+# Komari Lite 文档
+
+![Komari Lite](public/assets/komari-banner.svg)
 
 这是 [nuomiiiii/komari](https://github.com/nuomiiiii/komari) 的独立中文手册，基于 VitePress 构建。
 

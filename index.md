@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: "Komari"
+  name: "Komari Lite"
   text: "服务器监控与远程管理手册"
   tagline: 面向 nuomiiiii 分支的安装、升级、数据库、流量、远程终端、主题与安全配置说明。
   image:
     src: /assets/komari-icon.svg?v=3
-    alt: Komari
+    alt: Komari Lite
   actions:
     - theme: brand
       text: 开始部署

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { withBase } from "vitepress";
 
-const bannerSrc = withBase("/assets/komari-banner.svg?v=1");
+const bannerSrc = withBase("/assets/komari-banner.svg?v=2");
 const iconSrc = withBase("/assets/komari-icon.svg?v=3");
 </script>
 
@@ -10,7 +10,7 @@ const iconSrc = withBase("/assets/komari-icon.svg?v=3");
     <source media="(min-width: 960px)" :srcset="bannerSrc" type="image/svg+xml" />
     <img
       :src="iconSrc"
-      alt="Komari"
+      alt="Komari Lite"
       width="512"
       height="512"
       fetchpriority="high"
