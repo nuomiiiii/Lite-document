@@ -33,10 +33,6 @@ HTTP 自动跳转默认关闭。先确认面板可以正常访问，再配置反
 
 ## 常用入口
 
-- 管理后台：`/admin`
-- 服务器列表：`/admin/servers`
-- 远程管理：`/admin/remote`
-- 系统设置：`/admin/settings`
 - 版本发布：[GitHub Releases](https://github.com/nuomiiiii/komari/releases)
 - Agent：[nuomiiiii/komari-agent](https://github.com/nuomiiiii/komari-agent)
 
