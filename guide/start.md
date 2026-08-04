@@ -1,6 +1,10 @@
 # 快速开始
 
-这份手册面向 [nuomiiiii/komari](https://github.com/nuomiiiii/komari)，不是上游 `komari-monitor/komari` 的原样镜像。安装脚本、Docker 镜像、数据库迁移和后台功能均以本分支为准。当前配套 Agent 与上游官方 Agent 的协议和默认行为一致，但下载仓库、二进制与更新源以 `nuomiiiii/komari-agent` 为准。
+这份手册面向 Komari Lite [**nuomiiiii/komari**](https://github.com/nuomiiiii/komari)，不是上游 `komari-monitor/komari` 的原样镜像。
+
+安装脚本、Docker 镜像、数据库迁移和后台功能均以本分支为准。
+
+当前配套 Agent 与上游官方 Agent 的协议和默认行为一致，但下载仓库、二进制与更新源以 `nuomiiiii/komari-agent` 为准。
 
 手册中提到上游或官方实现时，会明确说明是“行为一致”“仅兼容指定范围”还是“Lite 存在差异”；没有明确结论的内容不应自行推断为完全相同。
 
