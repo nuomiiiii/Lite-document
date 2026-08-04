@@ -2,6 +2,10 @@
 
 本页描述 Komari Lite 服务端与 `nuomiiiii/komari-agent` 当前实际使用的线协议，供第三方 Agent、采集器和兼容客户端开发。它不是对上游未来协议的承诺。
 
+::: info Agent 口径
+本文提到“上游官方 Agent”时，Komari Lite 配套的 `nuomiiiii/komari-agent` 与其当前协议、默认参数和远程能力一致，并已与 Lite 服务端逐项核对。因此下文对上游官方 Agent 行为的说明也适用于 Lite 配套 Agent；只有明确标注“Lite 差异”“上游旧文档”或“第三方 Agent”时才需要区别处理。
+:::
+
 ::: danger 安全边界
 Agent Token 等同于节点身份。不要写入日志、URL 分享、前端代码或公开配置。生产环境使用 HTTPS/WSS；只有隔离测试环境才可忽略证书校验。
 :::
@@ -18,7 +22,7 @@ Agent Token 等同于节点身份。不要写入日志、URL 分享、前端代�
 | 回程路由 | 不支持 | `agent.route` / `agent.routeResult` |
 | 推荐用途 | 旧 Agent 兼容 | 新 Agent 默认协议 |
 
-当前官方 Agent 默认 `--protocol-version=2`。连续 3 次确认属于 v2 协议或 HTTP 状态错误后，会在当前连接周期回退到 v1。
+Komari Lite 当前配套 Agent 默认 `--protocol-version=2`，与上游官方 Agent 一致。连续 3 次确认属于 v2 协议或 HTTP 状态错误后，会在当前连接周期回退到 v1。
 
 ## 认证与端点
 
@@ -45,7 +49,7 @@ Authorization: Bearer <client-token>
 | `/api/clients/terminal` | WebSocket GET | 独立旧终端数据通道 |
 | `/api/clients/remote` | WebSocket GET | 远程终端与文件会话通道 |
 
-官方 Agent 还可同时发送 Cloudflare Access Service Token：
+Lite 配套 Agent 与上游官方 Agent 一样，还可同时发送 Cloudflare Access Service Token：
 
 ```http
 CF-Access-Client-Id: <id>
@@ -84,7 +88,7 @@ Content-Encoding: gzip
 
 ## 连接状态机
 
-官方 Agent 的实际流程：
+Lite 配套 Agent 与上游官方 Agent 一致的实际连接流程：
 
 1. 启动后先上传基础信息。
 2. 连接 `/api/clients/v2/rpc` WebSocket。
@@ -105,7 +109,7 @@ POST report 或 `agent.pull` 会刷新节点 fallback 在线状态；约 35 秒�
 | 方法 | 用途 | WebSocket | POST |
 | --- | --- | --- | --- |
 | `agent.report` | 实时指标上报 | 支持 | 支持 |
-| `agent.basicInfo` | 静态基础信息 | 支持 | 支持，官方 Agent 使用 |
+| `agent.basicInfo` | 静态基础信息 | 支持 | 支持，Lite 配套 Agent 与上游官方 Agent 均使用 |
 | `agent.pingResult` | Ping 结果 | 支持 | 支持 |
 | `agent.routeResult` | 回程路由结果 | 支持 | 支持 |
 | `agent.pull` | 拉取待下发事件 | 立即返回 | 最长等待约 25 秒 |
@@ -270,7 +274,7 @@ GPU 明细：
 }
 ```
 
-收到 `request_config_state=true` 时，官方 Agent 会再次上传当前 `month_rotate`。服务端设置优先时，Agent 应应用 `config.month_rotate`。
+收到 `request_config_state=true` 时，Lite 配套 Agent 会与上游官方 Agent 一样再次上传当前 `month_rotate`。服务端设置优先时，Agent 应应用 `config.month_rotate`。
 
 ### `agent.pingResult`
 
@@ -312,7 +316,7 @@ GPU 明细：
 }
 ```
 
-`finished_at` 必须是带时区时间。当前官方 Agent 的内置回程探测实际执行 ICMP traceroute；`protocol` 字段会原样回传，但不要据此假定已支持 TCP/UDP traceroute。
+`finished_at` 必须是带时区时间。Lite 当前配套 Agent 与上游官方 Agent 的内置回程探测都实际执行 ICMP traceroute；`protocol` 字段会原样回传，但不要据此假定已支持 TCP/UDP traceroute。
 
 ### `agent.pull`
 
@@ -375,7 +379,7 @@ fallback 采用至少一次投递语义。Agent 必须按事件 `id` 去重，�
 }
 ```
 
-执行前必须检查本地远程控制开关和安全策略。Windows 官方 Agent 使用 PowerShell，Unix 使用 `sh -s`。
+执行前必须检查本地远程控制开关和安全策略。Lite 配套 Agent 在 Windows 使用 PowerShell，在 Unix 使用 `sh -s`。
 
 结果不走 v2 method，而是：
 
@@ -473,7 +477,7 @@ X-Komari-Terminal-Session: <session-id>
 
 ### 消息事件
 
-官方 Agent 能解析 `agent.message` 和 `agent.event` 并记录日志，但当前 Lite 没有把它们作为通用外部消息总线。不要依赖它们承载必须送达的业务任务。
+Lite 配套 Agent 与上游官方 Agent 都能解析 `agent.message` 和 `agent.event` 并记录日志，但当前 Lite 服务端没有把它们作为通用外部消息总线。不要依赖它们承载必须送达的业务任务。
 
 ## v1 兼容协议
 
@@ -520,7 +524,7 @@ Ping：
 
 v1 没有回程路由协议，也没有与 v2 相同的可靠 fallback 事件队列。
 
-## 官方 Agent 参数
+## 配套 Agent 参数（与上游官方 Agent 一致）
 
 | 参数 | 环境变量 | 默认 | 说明 |
 | --- | --- | --- | --- |

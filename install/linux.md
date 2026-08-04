@@ -1,6 +1,6 @@
 # Linux 脚本安装
 
-官方脚本适合使用 systemd 的常见 Linux 发行版。
+本项目官方安装脚本适合使用 systemd 的常见 Linux 发行版。这里的“官方”专指 `nuomiiiii/komari` 仓库下方命令使用的脚本，不是上游仓库的安装脚本。
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/nuomiiiii/komari/main/install-komari.sh -o install-komari.sh
@@ -24,7 +24,7 @@ sudo journalctl -u komari -f
 
 后台一键更新只在运行环境满足原子回退要求时开放，主要包括：
 
-- 由官方脚本安装并通过 systemd 管理。
+- 由本项目官方脚本安装并通过 systemd 管理。
 - 当前进程属于 `komari.service`。
 - 主数据库和监控数据库位于受管 `data` 目录内。
 - 未使用外置 MySQL 或 PostgreSQL 指标库。
