@@ -32,6 +32,9 @@
 
 ## 开发入口
 
+- [主题开发指南](/development/theme)
+- [API 与 RPC2](/development/api)
+- [Agent RFC](/development/agent-rfc)
+- [兼容与公共接口](/development/compatibility)
 - Web 仓库：[nuomiiiii/komari-web](https://github.com/nuomiiiii/komari-web)
 - 示例主题：[nuomiiiii/nezha](https://github.com/nuomiiiii/nezha)
-- 公共接口兼容说明：[兼容与公共接口](/development/compatibility)

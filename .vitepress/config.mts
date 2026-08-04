@@ -48,6 +48,9 @@ const sidebar = [
     text: "主题与开发",
     items: [
       { text: "主题管理", link: "/themes/" },
+      { text: "主题开发", link: "/development/theme" },
+      { text: "API 与 RPC2", link: "/development/api" },
+      { text: "Agent RFC", link: "/development/agent-rfc" },
       { text: "兼容与公共接口", link: "/development/compatibility" },
     ],
   },
@@ -78,6 +81,7 @@ export default defineConfig({
       { text: "首页", link: "/" },
       { text: "快速开始", link: "/guide/start" },
       { text: "使用指南", link: "/admin/dashboard" },
+      { text: "开发指南", link: "/development/api" },
       { text: "常见问题", link: "/faq/" },
       { text: "GitHub", link: "https://github.com/nuomiiiii/komari" },
     ],
