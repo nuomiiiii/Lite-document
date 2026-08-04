@@ -17,6 +17,7 @@ const sidebar = [
       { text: "Linux 脚本安装", link: "/install/linux" },
       { text: "二进制安装", link: "/install/binary" },
       { text: "更新与数据库迁移", link: "/install/update" },
+      { text: "Agent 自动发现", link: "/install/agent-ad" },
     ],
   },
   {

@@ -6,6 +6,8 @@ Agent 负责采集服务器状态、执行探测并在管理员授权后提供�
 本页使用的是 Lite 配套的 `nuomiiiii/komari-agent`。它与上游官方 Agent 的当前协议、默认参数和远程能力一致，并已与 Lite 服务端实际实现核对；仓库、二进制下载和更新源仍使用 `nuomiiiii` 分支。协议细节见 [Agent RFC](/development/agent-rfc)。
 :::
 
+需要批量接入服务器时，请使用 [Agent 自动发现](/install/agent-ad)。自动发现会为每台 Agent 单独签发并保存节点凭据，不需要逐台创建节点和复制 Token。
+
 ## 最小配置
 
 ```bash
