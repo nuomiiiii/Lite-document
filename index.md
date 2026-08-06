@@ -18,9 +18,13 @@ hero:
 
 features:
   - title: 部署与升级
-    details: Docker、Linux 脚本、二进制安装，以及 2.1.12 数据迁移和回退注意事项。
+    details: Docker、Linux 脚本、二进制安装，以及数据迁移、备份和回退注意事项。
+  - title: 仪表盘配置
+    details: 预制布局、模块开关与排序、卡片宽度、刷新频率和 Top 排行口径。
   - title: 数据与性能
     details: 解释监控数据库、分层保留、备份、迁移进度、WAL 与空间回收。
+  - title: Agent 配置
+    details: 分节点保存安装配置、在线下发、应用状态和必须手动重装的安全边界。
   - title: 流量与通知
     details: 统一说明限额、重置日、计费流量、日报周报月报和告警的统计口径。
   - title: 远程管理
@@ -31,4 +35,4 @@ features:
     details: 主题安装、公共数据兼容、主题市场，以及开发时需要保持的字段约定。
 ---
 
-<div class="version-note"><strong>当前口径</strong><span>稳定版以 2.1.12 为基线；本轮快照验证的功能均已按 2.1.12 正式版口径写入手册。</span></div>
+<div class="version-note"><strong>当前口径</strong><span>手册以 Komari Lite 2.2.0 正式版为基线；快照功能以对应 Release 标注为准。</span></div>
