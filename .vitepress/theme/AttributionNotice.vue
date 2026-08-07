@@ -60,7 +60,7 @@ onBeforeUnmount(() => {
       <span class="attribution-notice__accent" aria-hidden="true" />
       <div class="attribution-notice__content">
         <span class="attribution-notice__label">特别致谢</span>
-        <p>感谢 Geekertao 为本站域名与部署提供支持。</p>
+        <p>感谢 Geekertao 为本文档中国大陆访问提供支持。</p>
       </div>
       <a
         class="attribution-notice__action"
