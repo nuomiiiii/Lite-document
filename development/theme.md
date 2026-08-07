@@ -42,6 +42,11 @@ ZIP 根目录必须直接包含 `komari-theme.json`。不要再套一层仓库�
   "author": "Example Author",
   "url": "https://github.com/example/komari-theme",
   "preview": "preview.png",
+  "navigation": {
+    "server_detail": "/server/{uuid}",
+    "server_network": "/server/{uuid}?view=network",
+    "ping_task_parameter": "ping_task"
+  },
   "configuration": {
     "type": "managed",
     "name": {
@@ -64,9 +69,24 @@ ZIP 根目录必须直接包含 `komari-theme.json`。不要再套一层仓库�
 | `author` | string | 建议 | 作者或团队 |
 | `url` | string | 否 | 项目主页 |
 | `preview` | string | 否 | 相对主题根目录的预览图 |
+| `navigation` | object | 否 | 仪表盘跳转到主题服务器页面的路由声明 |
 | `configuration` | object | 否 | 后台动态配置入口 |
 
 `short` 只能包含 ASCII 字母、数字、下划线和连字符。自定义主题不能使用 `default`，也不能包含空格、斜杠、反斜杠或 `..`。
+
+### 仪表盘导航
+
+`navigation` 让后台排行按当前启用主题的真实路由生成链接：
+
+| 字段 | 说明 |
+| --- | --- |
+| `server_detail` | 服务器详情路径模板，必须包含 `{uuid}` |
+| `server_network` | 服务器网络总览路径模板，必须包含 `{uuid}`；不填时回退到详情页 |
+| `ping_task_parameter` | Ping 任务 ID 的查询参数名，例如 `ping_task` |
+
+路径必须是站内绝对路径，不能包含协议、域名、反斜杠或越级片段。服务端会对 UUID 和查询参数进行编码。`2.2.1` 中平均时延与延迟抖动排行使用 `server_network`；近 15 分钟丢包使用 `server_detail` 并附带最差任务 ID。
+
+未提供 `navigation` 的旧主题仍可安装，服务端会使用兼容回退地址。新主题应显式声明这三个字段，使不同 Komari 版本和第三方主题切换时都能保持正确跳转。
 
 服务端上传限制：
 

@@ -124,7 +124,7 @@ API Key 调用不再重复要求 2FA。不要把管理员 Cookie、API Key 或 2
   "status": "success",
   "message": "",
   "data": {
-    "version": "2.1.12",
+    "version": "2.2.1",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }
@@ -281,7 +281,7 @@ socket.addEventListener("message", (event) => {
   "jsonrpc": "2.0",
   "id": "version-1",
   "result": {
-    "version": "2.1.12",
+    "version": "2.2.1",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }

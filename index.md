@@ -35,4 +35,4 @@ features:
     details: 主题安装、公共数据兼容、主题市场，以及开发时需要保持的字段约定。
 ---
 
-<div class="version-note"><strong>当前口径</strong><span>手册以 Komari Lite 2.2.0 正式版为基线；快照功能以对应 Release 标注为准。</span></div>
+<div class="version-note"><strong>当前口径</strong><span>手册以 Komari Lite 2.2.1 正式版为基线；后续快照差异以对应 Release 标注为准。</span></div>

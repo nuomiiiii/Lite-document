@@ -1,6 +1,6 @@
 # 内置 HTTPS
 
-<div class="version-note"><strong>2.1.12</strong><span>内置 HTTPS 已纳入 2.1.12 正式版，默认保持关闭，由管理员完成证书与端口配置后手动启用。</span></div>
+<div class="version-note"><strong>2.2.1</strong><span>内置 HTTPS 默认保持关闭，由管理员完成证书与端口配置后手动启用；2.2.1 修正了关闭过程中的状态同步。</span></div>
 
 内置 HTTPS 同时保护 Web 页面、后台 API、Agent 上报、导入导出、任务下发、文件管理、终端和实时连接。前端会随页面协议使用 `HTTPS` 和 `WSS`，避免混合内容。
 
@@ -65,4 +65,6 @@ volumes:
 
 ## 关闭 HTTPS
 
-关闭并保存后，页面会尝试回到原 HTTP 地址。Docker 必须仍然映射 HTTP 端口 `25774`；如果只发布了 HTTPS 端口，关闭后自然没有可访问的 HTTP 入口。
+关闭并保存后，页面会尝试回到原 HTTP 地址。服务状态会在 HTTPS 监听器实际停止后再更新，避免界面先显示已关闭而端口仍处于延迟退出阶段。
+
+Docker 必须仍然映射 HTTP 端口 `25774`；如果只发布了 HTTPS 端口，关闭后自然没有可访问的 HTTP 入口。
