@@ -28,13 +28,14 @@ jobs:
           node-version: 24
           cache: pnpm
       - name: Setup Pages
+        id: pages
         uses: actions/configure-pages@v5
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build
         run: pnpm docs:build
         env:
-          DOCS_BASE: /komari-document/
+          DOCS_BASE: ${{ steps.pages.outputs.base_path }}/
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
