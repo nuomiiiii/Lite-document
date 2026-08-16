@@ -36,7 +36,6 @@ HTTP 自动跳转默认关闭。先确认面板可以正常访问，再配置反
 ## 常用入口
 
 - 版本发布：[GitHub Releases](https://github.com/nuomiiiii/komari/releases)
-- 版本更新：[本手册版本页](/guide/changelog)
 - Agent：[nuomiiiii/komari-agent](https://github.com/nuomiiiii/komari-agent)
 
 下一步：[使用 Docker 部署](/install/docker) 或 [使用 Linux 脚本安装](/install/linux)。

@@ -8,7 +8,6 @@ const sidebar = [
     items: [
       { text: "快速开始", link: "/guide/start" },
       { text: "版本与功能范围", link: "/guide/versioning" },
-      { text: "版本更新", link: "/guide/changelog" },
     ],
   },
   {
