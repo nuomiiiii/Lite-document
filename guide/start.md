@@ -27,14 +27,16 @@ HTTP 自动跳转默认关闭。先确认面板可以正常访问，再配置反
 1. 在“账户与安全”中启用两步验证。
 2. 在“服务器”中添加节点并复制 Agent 安装参数。
 3. 配置数据保留天数、流量限额和流量重置日。
-4. 测试通知渠道，再启用离线、流量或延迟告警。
+4. 测试通知渠道，再启用离线、流量或延迟告警；需要时保存“新服务器默认配置”，避免之后逐台补规则。
 5. 完整备份一次 `data` 目录，并确认备份可以下载。
 6. 为公网面板配置 HTTPS。
 7. 在“外观与主题 → 主题管理”确认公开大屏主题可用；系统必须至少保留一个主题。
+8. 如果后台切换动画造成不适，可在“系统设置 → 通用”开启“减少动态效果”。
 
 ## 常用入口
 
 - 版本发布：[GitHub Releases](https://github.com/nuomiiiii/komari/releases)
+- 版本更新：[本手册版本页](/guide/changelog)
 - Agent：[nuomiiiii/komari-agent](https://github.com/nuomiiiii/komari-agent)
 
 下一步：[使用 Docker 部署](/install/docker) 或 [使用 Linux 脚本安装](/install/linux)。

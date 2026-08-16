@@ -15,6 +15,14 @@ docker run -d \
   ghcr.io/nuomiiiii/komari:latest
 ```
 
+也可以固定正式版本：
+
+```bash
+docker pull ghcr.io/nuomiiiii/komari:2.2.3
+```
+
+镜像包含 `linux/amd64` 和 `linux/arm64`。
+
 启动后访问：
 
 ```text

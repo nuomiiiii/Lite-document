@@ -35,11 +35,20 @@ ZIP 根目录必须直接包含 `komari-theme.json`。不要再套一层仓库�
 
 ```json
 {
-  "name": "Komari Example Theme",
+  "name": {
+    "zh-CN": "Komari 示例主题",
+    "en": "Komari Example Theme"
+  },
   "short": "example-theme",
-  "description": "A responsive theme for Komari Lite",
+  "description": {
+    "zh-CN": "面向 Komari Lite 的响应式主题",
+    "en": "A responsive theme for Komari Lite"
+  },
   "version": "1.0.0",
-  "author": "Example Author",
+  "author": {
+    "zh-CN": "示例作者",
+    "en": "Example Author"
+  },
   "url": "https://github.com/example/komari-theme",
   "preview": "preview.png",
   "navigation": {
@@ -62,11 +71,11 @@ ZIP 根目录必须直接包含 `komari-theme.json`。不要再套一层仓库�
 
 | 字段 | 类型 | 必需 | 说明 |
 | --- | --- | --- | --- |
-| `name` | string | 是 | 完整主题名称 |
+| `name` | string \| object | 是 | 完整主题名称，可为字符串或多语言对象 |
 | `short` | string | 是 | 唯一目录名 |
-| `description` | string | 建议 | 主题说明 |
+| `description` | string \| object | 建议 | 主题说明，可为字符串或多语言对象 |
 | `version` | string | 建议 | 建议使用语义化版本 |
-| `author` | string | 建议 | 作者或团队 |
+| `author` | string \| object | 建议 | 作者或团队，可为字符串或多语言对象 |
 | `url` | string | 否 | 项目主页 |
 | `preview` | string | 否 | 相对主题根目录的预览图 |
 | `navigation` | object | 否 | 仪表盘跳转到主题服务器页面的路由声明 |
@@ -84,7 +93,9 @@ ZIP 根目录必须直接包含 `komari-theme.json`。不要再套一层仓库�
 | `server_network` | 服务器网络总览路径模板，必须包含 `{uuid}`；不填时回退到详情页 |
 | `ping_task_parameter` | Ping 任务 ID 的查询参数名，例如 `ping_task` |
 
-路径必须是站内绝对路径，不能包含协议、域名、反斜杠或越级片段。服务端会对 UUID 和查询参数进行编码。`2.2.1` 中平均时延与延迟抖动排行使用 `server_network`；近 15 分钟丢包使用 `server_detail` 并附带最差任务 ID。
+路径必须是站内绝对路径，不能包含协议、域名、反斜杠或越级片段。服务端会对 UUID 和查询参数进行编码。平均时延与延迟抖动排行使用 `server_network`；近 15 分钟丢包使用 `server_detail` 并附带最差任务 ID。
+
+请求某个服务器的延迟记录、指标曲线或统计时，服务端只返回当前仍关联到该服务器的任务。主题请求任务清单时应携带服务器 UUID；未携带时需要主题自行过滤，不要把未关联任务的历史延迟继续画到该节点上。重新关联后仍可查看保留的历史数据。
 
 未提供 `navigation` 的旧主题仍可安装，服务端会使用兼容回退地址。新主题应显式声明这三个字段，使不同 Komari 版本和第三方主题切换时都能保持正确跳转。
 
@@ -165,6 +176,28 @@ ZIP 根目录必须直接包含 `komari-theme.json`。不要再套一层仓库�
         "type": "richtext",
         "name": "页脚 HTML",
         "default": ""
+      },
+      {
+        "key": "featuredNodes",
+        "type": "nodes",
+        "name": {
+          "zh-CN": "重点节点",
+          "en": "Featured nodes"
+        },
+        "help": {
+          "zh-CN": "选择公开页面优先展示的服务器",
+          "en": "Servers highlighted on the public page"
+        },
+        "default": []
+      },
+      {
+        "key": "latencyTasks",
+        "type": "pingtasks",
+        "name": {
+          "zh-CN": "延迟任务",
+          "en": "Latency tasks"
+        },
+        "default": []
       }
     ]
   }
@@ -175,7 +208,7 @@ ZIP 根目录必须直接包含 `komari-theme.json`。不要再套一层仓库�
 
 | 字段 | 适用范围 | 说明 |
 | --- | --- | --- |
-| `type` | 全部 | `title`、`switch`、`select`、`number`、`string`、`richtext` |
+| `type` | 全部 | `title`、`switch`、`select`、`number`、`string`、`richtext`、`nodes`、`pingtasks` |
 | `name` | 全部 | 字符串或多语言对象 |
 | `key` | 除 `title` | 保存到 `theme_settings` 的唯一键 |
 | `required` | 文本类 | 是否必填 |
@@ -190,6 +223,10 @@ ZIP 根目录必须直接包含 `komari-theme.json`。不要再套一层仓库�
 - `number` 默认 `0`。
 - `switch` 默认 `false`。
 - `string`、`richtext` 默认空字符串。
+- `nodes` 默认空数组，保存当前实例中的服务器 UUID。
+- `pingtasks` 默认空数组，保存延迟监测任务 ID。
+
+`nodes` 和 `pingtasks` 由后台提供选择器，主题只需读取保存后的 ID 列表。不要在主题配置里硬编码服务器名称或任务名称。
 
 公开页面通过 `/api/public` 的 `data.theme_settings` 获取最终值：
 
@@ -203,7 +240,7 @@ const compact = data.theme_settings?.compactCards ?? true;
 
 ### 多语言文本
 
-`configuration.name`、配置项 `name` 和 `help` 可写成对象：
+`name`、`description`、`author`、`configuration.name`、配置项 `name` 和 `help` 可写成对象：
 
 ```json
 {
@@ -214,7 +251,7 @@ const compact = data.theme_settings?.compactCards ?? true;
 }
 ```
 
-后台优先匹配完整语言代码，再匹配基础语言，最后回退到对象中的首个值。仍应提供一个可读的默认语言，不要依赖对象键顺序表达业务含义。
+后台优先匹配完整语言代码，再匹配基础语言，然后尝试 `en`，最后回退到对象中的首个非空值。仍应提供一个可读的默认语言，不要依赖对象键顺序表达业务含义。字符串形式的旧清单仍然有效。
 
 ### raw 配置
 

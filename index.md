@@ -26,7 +26,7 @@ features:
   - title: Agent 配置
     details: 分节点保存安装配置、在线下发、应用状态和必须手动重装的安全边界。
   - title: 流量与通知
-    details: 统一说明限额、重置日、计费流量、日报周报月报和告警的统计口径。
+    details: 统一说明限额、重置日、计费流量、日报周报月报、默认配置和告警静默。
   - title: 远程管理
     details: Agent 接入、远程终端、文件管理、任务下发和反向代理兼容要求。
   - title: HTTPS 与安全
@@ -35,4 +35,4 @@ features:
     details: 主题安装、公共数据兼容、主题市场，以及开发时需要保持的字段约定。
 ---
 
-<div class="version-note"><strong>当前口径</strong><span>手册以 Komari Lite 2.2.1 正式版为基线；后续快照差异以对应 Release 标注为准。</span></div>
+<div class="version-note"><strong>当前口径</strong><span>手册以 Komari Lite 2.2.3 正式版为基线；后续快照差异以对应 Release 标注为准。</span></div>

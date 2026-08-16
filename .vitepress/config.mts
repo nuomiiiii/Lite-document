@@ -8,6 +8,7 @@ const sidebar = [
     items: [
       { text: "快速开始", link: "/guide/start" },
       { text: "版本与功能范围", link: "/guide/versioning" },
+      { text: "版本更新", link: "/guide/changelog" },
     ],
   },
   {
@@ -27,6 +28,7 @@ const sidebar = [
       { text: "服务器管理", link: "/admin/servers" },
       { text: "监测与回程", link: "/admin/monitoring" },
       { text: "流量与报告", link: "/admin/traffic" },
+      { text: "通知与告警", link: "/admin/notifications" },
     ],
   },
   {
