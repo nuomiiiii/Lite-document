@@ -4,7 +4,7 @@
 
 安装脚本、Docker 镜像、数据库迁移和后台功能均以本分支为准。
 
-当前配套 Agent 与上游官方 Agent 的协议和默认行为一致，但下载仓库、二进制与更新源以 `nuomiiiii/komari-agent` 为准。
+当前配套 Agent 与上游官方 Agent 的协议和默认行为一致，但下载仓库、二进制与更新源以 `nuomiiiii/komari-agent` 为准。当前稳定搭配为 Komari `2.2.3` 第四次更新与 Agent `2.2.0.2`。
 
 手册中提到上游或官方实现时，会明确说明是“行为一致”“仅兼容指定范围”还是“Lite 存在差异”；没有明确结论的内容不应自行推断为完全相同。
 
@@ -32,10 +32,12 @@ HTTP 自动跳转默认关闭。先确认面板可以正常访问，再配置反
 6. 为公网面板配置 HTTPS。
 7. 在“外观与主题 → 主题管理”确认公开大屏主题可用；系统必须至少保留一个主题。
 8. 如果后台切换动画造成不适，可在“系统设置 → 通用”开启“减少动态效果”。
+9. 需要按分组和国家/地区整理新节点时，可开启“系统设置 → 通用 → 新增服务器自动排序”；该开关默认关闭，不会重排已有节点。
 
 ## 常用入口
 
 - 版本发布：[GitHub Releases](https://github.com/nuomiiiii/komari/releases)
 - Agent：[nuomiiiii/komari-agent](https://github.com/nuomiiiii/komari-agent)
+- Agent 安装、日志与卸载：[Agent 安装与维护](/install/agent)
 
-下一步：[使用 Docker 部署](/install/docker) 或 [使用 Linux 脚本安装](/install/linux)。
+下一步：[使用 Docker 部署](/install/docker)、[使用 Linux 脚本安装](/install/linux)，或在服务端部署完成后[安装 Agent](/install/agent)。

@@ -1,0 +1,333 @@
+# Agent 安装与维护
+
+Komari Lite `2.2.3` 第四次更新建议搭配 Agent `2.2.0.2`。这组版本修复了 Agent 进程仍在运行、面板却显示离线的问题；WebSocket 断开或写入卡住后，Agent 会自动重连。
+
+本页覆盖 Agent 的安装、状态检查、日志、重启、更新和卸载。连接参数与在线配置见 [Agent 接入与配置](/remote/agent)，批量部署见 [Agent 自动发现](/install/agent-ad)。
+
+## 安装前确认
+
+优先在 Komari 后台的“添加服务器”或 Agent 部署配置中生成命令。生成的命令已经包含面板地址、节点 Token 和所选安装参数，能减少手工拼写错误。
+
+Linux 安装脚本的默认值如下：
+
+| 项目 | 默认值 |
+| --- | --- |
+| 服务名 | `komari-agent` |
+| 安装目录 | `/opt/komari` |
+| 程序路径 | `/opt/komari/agent` |
+| 运行用户 | `root` |
+
+如果安装时使用了 `--install-service-name` 或 `--install-dir`，后续命令必须替换为实际服务名和目录。
+
+## 安装 Agent
+
+### Linux、macOS 和 FreeBSD
+
+推荐直接执行后台生成的命令。需要手工安装时，可下载脚本后运行：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nuomiiiii/komari-agent/main/install.sh -o install-komari-agent.sh
+sudo bash install-komari-agent.sh \
+  --endpoint "https://example.com" \
+  --token "你的-Agent-Token"
+```
+
+安装脚本会识别 systemd、OpenRC、OpenWrt procd、macOS launchd 或 Upstart，并创建对应服务。脚本再次运行时会替换原服务和程序，适合更新或修改必须重装才能生效的安装参数。
+
+::: danger 保护节点凭据
+Agent Token、Cloudflare Access Service Token 和 `auto-discovery.json` 都属于敏感凭据。不要把完整安装命令、服务启动参数或日志原样贴到公开工单。
+:::
+
+### Docker
+
+Docker 用户应优先使用后台生成的 `docker run` 或 Compose 配置。默认拉取 `latest`：
+
+```bash
+docker pull ghcr.io/nuomiiiii/komari-agent:latest
+```
+
+自动发现部署必须把 `/app/auto-discovery.json` 持久化到宿主机，并确保每个容器使用独立文件。Docker Agent 不会在容器内替换自身程序，更新时必须拉取新镜像并重建容器。
+
+### Windows
+
+在管理员 PowerShell 中执行后台生成的安装命令。脚本默认安装到：
+
+```text
+C:\Program Files\Komari
+```
+
+默认服务名为 `komari-agent`，由 NSSM 管理并设置为自动启动。
+
+## 查看当前状态
+
+### systemd
+
+```bash
+sudo systemctl is-enabled komari-agent
+sudo systemctl is-active komari-agent
+sudo systemctl status komari-agent --no-pager -l
+```
+
+正常情况下，服务应同时显示 `enabled` 和 `active`。状态页中的启动命令还能帮助确认面板地址、安装路径和是否使用了自定义参数；对外分享前请遮盖 Token。
+
+### Docker
+
+```bash
+docker ps --filter name=komari-agent
+docker inspect --format '{{.State.Status}} / restart={{.RestartCount}}' komari-agent
+```
+
+容器状态为 `running` 只表示进程存在，还应在 Komari 后台确认节点在线、最后上报时间持续更新。
+
+### OpenRC 与 OpenWrt
+
+```bash
+sudo rc-service komari-agent status
+```
+
+OpenWrt procd：
+
+```bash
+/etc/init.d/komari-agent status
+```
+
+### Windows
+
+```powershell
+Get-Service -Name komari-agent
+$nssm = (Get-Command nssm -ErrorAction SilentlyContinue).Source
+if (-not $nssm) { $nssm = Join-Path $env:ProgramFiles "Komari\nssm.exe" }
+& $nssm status komari-agent
+```
+
+### macOS
+
+系统级安装：
+
+```bash
+sudo launchctl print system/com.komari.komari-agent
+```
+
+用户级安装：
+
+```bash
+launchctl print "gui/$(id -u)/com.komari.komari-agent"
+```
+
+## 查看日志
+
+### systemd
+
+最近 100 行：
+
+```bash
+sudo journalctl -u komari-agent -n 100 --no-pager
+```
+
+持续查看：
+
+```bash
+sudo journalctl -u komari-agent -f
+```
+
+只看最近 30 分钟：
+
+```bash
+sudo journalctl -u komari-agent --since "30 minutes ago" --no-pager
+```
+
+如果使用了自定义服务名，请把命令中的 `komari-agent` 替换为实际名称。
+
+### Docker
+
+```bash
+docker logs --tail 100 komari-agent
+docker logs -f komari-agent
+```
+
+### OpenRC、OpenWrt 与 macOS
+
+OpenRC 不固定日志文件位置，需按系统实际使用的 syslog 服务查看；Alpine 常见方式是先检查 `/var/log/messages`，或使用系统已经配置的日志命令。
+
+OpenWrt 可查看系统日志：
+
+```bash
+logread -e komari-agent
+logread -f
+```
+
+macOS 安装脚本会把标准输出和错误写入以下文件之一：
+
+```text
+/var/log/komari-agent.log
+~/Library/Logs/komari-agent.log
+```
+
+```bash
+tail -n 100 /var/log/komari-agent.log
+```
+
+用户级安装请改用 `$HOME/Library/Logs/komari-agent.log`。
+
+### Windows
+
+Windows 安装脚本默认不会创建独立的 Agent 文本日志。先用 `Get-Service` 和 Komari 后台的最后上报时间判断状态；服务启动失败时，再查看“事件查看器 → Windows 日志 → 应用程序”中的 NSSM 或服务错误。
+
+::: warning 分享日志前先脱敏
+删除面板域名、IP、Agent Token、自动发现密钥、Cloudflare Access 凭据和完整启动参数。不要为了排查而关闭 TLS 校验或把 Token 改回 URL 参数。
+:::
+
+## 根据日志排查
+
+| 现象 | 优先检查 |
+| --- | --- |
+| `401` 或 `403` | 面板地址是否指向正确实例、Token 是否已轮换、Cloudflare Access 凭据是否成对配置 |
+| 证书或 `x509` 错误 | 域名是否匹配证书、证书链是否完整、服务器时间是否正确 |
+| `connection refused` | 面板端口是否监听、防火墙和反向代理是否指向正确端口 |
+| DNS 或超时 | Agent 所在节点能否解析并访问面板域名，自定义 DNS 和 IPv4/IPv6 偏好是否合适 |
+| 服务反复重启 | 查看最早出现的参数、权限或配置文件错误，不要只截取最后一行 |
+| 进程运行但面板离线 | 先确认 Komari 为 `2.2.3` 第四次更新、Agent 为 `2.2.0.2`，再检查 WebSocket 和代理超时 |
+| 在线但流量或磁盘缺失 | 检查包含/排除网卡、挂载点和采集间隔，确认没有把实际设备过滤掉 |
+| 配置停在“已发送” | 确认 Agent 在线且版本支持配置回执；查看日志中的配置应用失败原因 |
+
+Agent `2.2.0.2` 在 WebSocket 被关闭或写入卡住后会自动重连。更新后仍频繁离线时，应继续检查反向代理、Cloudflare Access、DNS 和网络路径，不要靠定时重启掩盖问题。
+
+## 重启与更新
+
+### systemd
+
+```bash
+sudo systemctl restart komari-agent
+sudo systemctl status komari-agent --no-pager -l
+```
+
+更新可在 Komari 后台发起，也可以重新执行当前节点的完整安装命令。重新运行脚本会替换程序和服务配置，但不会主动删除安装目录中的 `auto-discovery.json`、`net_static.json` 等数据文件。
+
+### Docker
+
+```bash
+docker pull ghcr.io/nuomiiiii/komari-agent:latest
+```
+
+拉取后使用原来的参数、卷挂载和重启策略重建容器。不要为了更新而删除持久化的 `auto-discovery.json`。
+
+### OpenRC、OpenWrt、Windows 与 macOS
+
+```bash
+sudo rc-service komari-agent restart
+```
+
+```bash
+/etc/init.d/komari-agent restart
+```
+
+```powershell
+Restart-Service -Name komari-agent
+```
+
+```bash
+# macOS 系统级安装
+sudo launchctl kickstart -k system/com.komari.komari-agent
+
+# macOS 用户级安装
+launchctl kickstart -k "gui/$(id -u)/com.komari.komari-agent"
+```
+
+## 卸载 Agent
+
+卸载系统服务不会自动删除 Komari 后台中的服务器记录。确认该节点不再使用后，再决定是否从后台删除服务器。
+
+### 一键完全卸载（默认 systemd 安装）
+
+确认不再需要恢复节点身份后，可复制并执行下面这一条命令。它会停止并删除默认的 `komari-agent` 服务，同时永久删除 `/opt/komari` 中的程序、Agent Token、自动发现凭据和本地流量状态：
+
+```bash
+sudo sh -eu -c 'if [ "$(systemctl show -p LoadState --value komari-agent.service)" != "not-found" ]; then systemctl disable --now komari-agent.service; fi; rm -f /etc/systemd/system/komari-agent.service; systemctl daemon-reload; systemctl reset-failed komari-agent.service 2>/dev/null || true; rm -rf -- /opt/komari'
+```
+
+::: danger 执行后无法恢复节点凭据
+这条命令只适用于默认服务名 `komari-agent` 和默认安装目录 `/opt/komari`。使用过 `--install-service-name` 或 `--install-dir` 时不要直接执行，请按下面的分步方式替换为实际值。
+:::
+
+### systemd
+
+先移除服务：
+
+```bash
+sudo systemctl disable --now komari-agent
+sudo rm -f /etc/systemd/system/komari-agent.service
+sudo systemctl daemon-reload
+sudo systemctl reset-failed komari-agent.service
+```
+
+这时 `/opt/komari` 仍保留节点凭据和流量文件。确认不再需要恢复原节点身份后，才执行完整清理：
+
+```bash
+sudo rm -rf /opt/komari
+```
+
+::: danger 完整清理不可恢复
+删除安装目录会同时删除 Agent 程序、自动发现凭据和本地流量状态。准备重装并继续使用原节点时，应保留 `auto-discovery.json`；需要保留本地流量周期时，还应备份 `net_static.json`。
+:::
+
+### Docker
+
+```bash
+docker stop komari-agent
+docker rm komari-agent
+```
+
+以上命令不会删除宿主机持久化文件。确认不再需要节点身份后，再手工删除对应的 `auto-discovery.json`；不要误删其他容器共用目录。
+
+### OpenRC 与 OpenWrt
+
+```bash
+sudo rc-service komari-agent stop
+sudo rc-update del komari-agent default
+sudo rm -f /etc/init.d/komari-agent
+```
+
+OpenWrt：
+
+```bash
+/etc/init.d/komari-agent stop
+/etc/init.d/komari-agent disable
+rm -f /etc/init.d/komari-agent
+```
+
+确认无需保留凭据后，再删除实际安装目录。
+
+### Windows
+
+在管理员 PowerShell 中执行：
+
+```powershell
+$nssm = (Get-Command nssm -ErrorAction SilentlyContinue).Source
+if (-not $nssm) { $nssm = Join-Path $env:ProgramFiles "Komari\nssm.exe" }
+& $nssm stop komari-agent
+& $nssm remove komari-agent confirm
+```
+
+只移除服务会保留 `C:\Program Files\Komari`。确认无需保留节点身份和本地数据后，再删除该目录：
+
+```powershell
+Remove-Item -LiteralPath "$env:ProgramFiles\Komari" -Recurse -Force
+```
+
+### macOS
+
+系统级服务：
+
+```bash
+sudo launchctl bootout system /Library/LaunchDaemons/com.komari.komari-agent.plist
+sudo rm -f /Library/LaunchDaemons/com.komari.komari-agent.plist
+```
+
+用户级服务：
+
+```bash
+launchctl bootout "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.komari.komari-agent.plist"
+rm -f "$HOME/Library/LaunchAgents/com.komari.komari-agent.plist"
+```
+
+最后确认实际安装目录和凭据是否仍需保留，再决定是否删除 `/usr/local/komari` 或 `$HOME/.komari`。

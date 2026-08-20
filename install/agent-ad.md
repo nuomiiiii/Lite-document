@@ -6,7 +6,7 @@
 本页参考了[上游自动发现文档](https://komari-document.pages.dev/install/agent-ad)，并按 Komari Lite 当前服务端、管理界面和配套 Agent 重新核对。Lite 配套 Agent 的自动注册、凭据保存和再次启动行为与上游官方 Agent 当前实现一致；安装脚本、Docker 镜像、二进制和更新源使用 `nuomiiiii/komari-agent`。
 :::
 
-请使用 Lite 配套 Agent `1.0.40` 或更高版本，建议直接使用最新版本。
+请直接使用当前稳定 Agent `2.2.0.2` 或后续兼容版本。服务端应使用 Komari `2.2.3` 第四次更新或更新的稳定构建，避免节点连接正常却被误判离线。
 
 ## 工作方式
 
@@ -160,3 +160,5 @@ sudo journalctl -u komari-agent -f
 ```
 
 如果使用了自定义服务名，请把 `komari-agent` 替换为实际名称。
+
+更多状态、Docker 日志、重启、更新和卸载命令见 [Agent 安装与维护](/install/agent)。

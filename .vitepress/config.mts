@@ -11,13 +11,21 @@ const sidebar = [
     ],
   },
   {
-    text: "安装与升级",
+    text: "服务端部署",
     items: [
       { text: "Docker 部署", link: "/install/docker" },
       { text: "Linux 脚本安装", link: "/install/linux" },
       { text: "二进制安装", link: "/install/binary" },
       { text: "更新与数据库迁移", link: "/install/update" },
+    ],
+  },
+  {
+    text: "Agent 节点",
+    items: [
+      { text: "安装与维护", link: "/install/agent" },
       { text: "Agent 自动发现", link: "/install/agent-ad" },
+      { text: "接入与配置", link: "/remote/agent" },
+      { text: "远程终端与文件", link: "/remote/terminal" },
     ],
   },
   {
@@ -38,10 +46,8 @@ const sidebar = [
     ],
   },
   {
-    text: "连接与安全",
+    text: "访问与安全",
     items: [
-      { text: "Agent 接入", link: "/remote/agent" },
-      { text: "远程终端与文件", link: "/remote/terminal" },
       { text: "内置 HTTPS", link: "/security/https" },
       { text: "反向代理与 Tunnel", link: "/security/reverse-proxy" },
     ],
@@ -82,6 +88,7 @@ export default defineConfig({
     nav: [
       { text: "首页", link: "/" },
       { text: "快速开始", link: "/guide/start" },
+      { text: "Agent 运维", link: "/install/agent" },
       { text: "使用指南", link: "/admin/dashboard" },
       { text: "开发指南", link: "/development/api" },
       { text: "常见问题", link: "/faq/" },

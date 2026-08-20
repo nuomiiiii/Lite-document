@@ -8,6 +8,16 @@
 
 证书不会修改 Agent Token。更常见的是 Agent endpoint 改到了另一端口或实例、旧 Token 已轮换，或代理把请求送到错误后端。
 
+## Agent 进程仍在运行，为什么面板显示离线？
+
+先确认 Komari 已更新到 `2.2.3` 第四次构建 `0huo552`，Agent 已更新到 `2.2.0.2`。两端需要同时更新：服务端负责维持在线判定，Agent 负责在 WebSocket 被关闭或写入卡住后自动重连。
+
+版本已经正确仍反复离线时，继续检查反向代理 WebSocket 超时、Cloudflare Access、DNS 和 IPv4/IPv6 路径。状态与日志命令见 [Agent 安装与维护](/install/agent)。
+
+## Agent 的状态、日志和卸载命令在哪里？
+
+[Agent 安装与维护](/install/agent) 按 systemd、Docker、OpenRC、OpenWrt、Windows 和 macOS 分别列出了状态检查、日志、重启、更新和卸载命令；默认 systemd 安装还提供一键完全卸载。完整卸载前先确认是否需要保留 `auto-discovery.json` 和 `net_static.json`。
+
 ## 数据库一小时增加很多，是否代表一天线性增长？
 
 不一定。新部署的原始层、分钟层和五分钟层会依次填充，早期增长不能直接乘以 24 或保留天数。稳定占用还取决于服务器上报间隔、探测间隔、任务数和数据波动。
@@ -42,7 +52,7 @@
 
 ## 启用内置 HTTPS 后，Linux 在线更新失败？
 
-`2.2.3` 已修复本机证书名称校验导致的误判。如果仍失败，确认当前是 Linux 直装、由 `komari.service` 管理，并且构建码不低于同版本第一次更新 `sy75112`。Docker 和 Windows 不走这条一键更新通道。
+`2.2.3` 已修复本机证书名称校验导致的误判。如果仍失败，确认当前是 Linux 直装、由 `komari.service` 管理，并且构建码不低于同版本第一次更新；当前稳定构建码为 `0huo552`。Docker 和 Windows 不走这条一键更新通道。
 
 ## 如何提交有效问题？
 
