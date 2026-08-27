@@ -1,13 +1,13 @@
 # 内置 HTTPS
 
-<div class="version-note"><strong>2.2.3</strong><span>内置 HTTPS 默认保持关闭；2.2.1 修正了关闭过程中的状态同步。启用后，Linux 直装在线更新不再因本机证书名称校验失败。</span></div>
+<div class="version-note"><strong>2.3.0</strong><span>新安装默认 HTTPS 端口为 36888，内置 HTTPS 仍保持关闭；从旧数据升级会保留已有 HTTPS 监听设置。</span></div>
 
 内置 HTTPS 同时保护 Web 页面、后台 API、Agent 上报、导入导出、任务下发、文件管理、终端和实时连接。前端会随页面协议使用 `HTTPS` 和 `WSS`，避免混合内容。
 
 ## 默认状态
 
 - 内置 HTTPS：关闭。
-- HTTPS 监听端口：`35938`。
+- HTTPS 监听端口：`36888`。
 - HTTP 自动跳转：关闭。
 - 证书路径：`./data/tls/server.crt`。
 - 私钥路径：`./data/tls/server.key`。
@@ -22,8 +22,8 @@ Docker 示例：
 
 ```yaml
 ports:
-  - "25774:25774"
-  - "35938:35938"
+  - "27777:27777"
+  - "36888:36888"
 volumes:
   - ./data:/app/data
   - ./certs:/certs:ro
@@ -61,13 +61,13 @@ volumes:
 
 ## IPv4 与 IPv6
 
-使用 `:35938` 这类通配监听时，系统会检测 IPv4 和 IPv6 是否实际可用，并在后台分别显示监听状态。主机没有对应协议栈时，不会把不可用协议显示成已监听。
+使用 `:36888` 这类通配监听时，系统会检测 IPv4 和 IPv6 是否实际可用，并在后台分别显示监听状态。主机没有对应协议栈时，不会把不可用协议显示成已监听。
 
 ## 关闭 HTTPS
 
 关闭并保存后，页面会尝试回到原 HTTP 地址。服务状态会在 HTTPS 监听器实际停止后再更新，避免界面先显示已关闭而端口仍处于延迟退出阶段。
 
-Docker 必须仍然映射 HTTP 端口 `25774`；如果只发布了 HTTPS 端口，关闭后自然没有可访问的 HTTP 入口。
+Docker 必须仍然映射 HTTP 端口 `27777`；如果只发布了 HTTPS 端口，关闭后自然没有可访问的 HTTP 入口。
 
 ## 在线更新
 

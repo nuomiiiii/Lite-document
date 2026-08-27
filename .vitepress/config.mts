@@ -33,6 +33,7 @@ const sidebar = [
     items: [
       { text: "仪表盘", link: "/admin/dashboard" },
       { text: "服务器管理", link: "/admin/servers" },
+      { text: "账单中心", link: "/admin/billing" },
       { text: "监测与回程", link: "/admin/monitoring" },
       { text: "流量与报告", link: "/admin/traffic" },
       { text: "通知与告警", link: "/admin/notifications" },
@@ -71,20 +72,20 @@ const sidebar = [
 export default defineConfig({
   base,
   lang: "zh-CN",
-  title: "Komari Lite 文档",
-  description: "nuomiiiii/komari 安装、升级、管理与开发手册",
+  title: "Lite 文档",
+  description: "Lite 安装、升级、管理与开发手册",
   cleanUrls: true,
   lastUpdated: true,
   head: [
-    ["link", { rel: "icon", type: "image/svg+xml", href: `${base}assets/komari-icon.svg?v=3` }],
-    ["meta", { name: "theme-color", content: "#087f73" }],
+    ["link", { rel: "icon", type: "image/svg+xml", href: `${base}assets/lite-icon.svg?v=1` }],
+    ["meta", { name: "theme-color", content: "#078DEE" }],
   ],
   markdown: {
     image: { lazyLoading: true },
   },
   themeConfig: {
-    logo: "/assets/komari-icon.svg?v=3",
-    siteTitle: "Komari Lite 文档",
+    logo: "/assets/lite-icon.svg?v=1",
+    siteTitle: "Lite 文档",
     nav: [
       { text: "首页", link: "/" },
       { text: "快速开始", link: "/guide/start" },
@@ -92,7 +93,7 @@ export default defineConfig({
       { text: "使用指南", link: "/admin/dashboard" },
       { text: "开发指南", link: "/development/api" },
       { text: "常见问题", link: "/faq/" },
-      { text: "GitHub", link: "https://github.com/nuomiiiii/komari" },
+      { text: "GitHub", link: "https://github.com/nuomiiiii/lite" },
     ],
     sidebar,
     outline: { label: "本页目录", level: [2, 3] },
@@ -114,11 +115,11 @@ export default defineConfig({
       },
     },
     socialLinks: [
-      { icon: "github", link: "https://github.com/nuomiiiii/komari" },
+      { icon: "github", link: "https://github.com/nuomiiiii/lite" },
     ],
     footer: {
       message: "基于 MIT 许可证发布",
-      copyright: "Komari Lite 文档 · 部分结构参考上游项目",
+      copyright: "Lite 文档 · 部分结构参考上游项目",
     },
   },
 });

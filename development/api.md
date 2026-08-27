@@ -1,9 +1,9 @@
 # API 与 RPC2
 
-Komari Lite 同时保留兼容 HTTP API，并提供 JSON-RPC 2.0 入口。新主题和新集成优先使用 RPC2；旧 HTTP 路由主要用于兼容现有主题、脚本和 Agent。
+Lite 同时保留兼容 HTTP API，并提供 JSON-RPC 2.0 入口。新主题和新集成优先使用 RPC2；旧 HTTP 路由主要用于兼容现有主题、脚本和 Agent。
 
 ::: warning 版本口径
-本页只记录 `nuomiiiii/komari` 当前实际提供的接口。标为兼容的旧 HTTP 接口与上游对应接口保持相同调用方式；Lite 新增字段、RPC2 方法或明确差异会直接注明。未收录的上游接口不代表 Lite 支持，不要根据数据库表、后台页面请求或上游插件接口推断兼容范围。
+本页只记录 `nuomiiiii/lite` 当前实际提供的接口。标为兼容的旧 HTTP 接口与上游对应接口保持相同调用方式；Lite 新增字段、RPC2 方法或明确差异会直接注明。未收录的上游接口不代表 Lite 支持，不要根据数据库表、后台页面请求或上游插件接口推断兼容范围。
 :::
 
 ## 基础约定
@@ -124,7 +124,7 @@ API Key 调用不再重复要求 2FA。不要把管理员 Cookie、API Key 或 2
   "status": "success",
   "message": "",
   "data": {
-    "version": "2.2.3",
+    "version": "2.3.0",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }
@@ -281,7 +281,7 @@ socket.addEventListener("message", (event) => {
   "jsonrpc": "2.0",
   "id": "version-1",
   "result": {
-    "version": "2.2.3",
+    "version": "2.3.0",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }
@@ -343,6 +343,8 @@ socket.addEventListener("message", (event) => {
 - `common:getRecords`
 
 `admin:*` 方法会随后台能力演进。外部自动化应只调用经过验证的具体方法，并固定兼容版本，不要把后台路由列表当作永久稳定 SDK。
+
+2.3.0 新增的账单中心管理方法包括 `admin:getBillingOverview`、`admin:getBillingServers`、`admin:getBillingMonthly`、`admin:getBillingYearly`、`admin:getBillingEntries`、`admin:createBillingTrafficReset`、`admin:createBillingIPChange` 和 `admin:voidBillingEntry`。这些方法需要管理员权限，属于随后台演进的管理接口，不是匿名主题 API。
 
 ## 指标查询
 

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Lite online app icon</title>
+  <desc id="desc">The three-tile Lite mark with an integrated green online node in the open upper-right quadrant.</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#1E2933" flood-opacity=".08"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="22" y="18" width="468" height="468" rx="108" fill="#F7F9FB" stroke="#E5E9ED" stroke-width="6"/>
+    <rect x="108" y="106" width="140" height="140" rx="38" fill="#202A33"/>
+    <rect x="108" y="258" width="140" height="140" rx="38" fill="#FF6B5E"/>
+    <rect x="260" y="258" width="140" height="140" rx="38" fill="#0E86DD"/>
+    <circle cx="330" cy="176" r="34" fill="#DDF7E8"/>
+    <circle cx="330" cy="176" r="20" fill="#22B573"/>
+  </g>
+</svg>

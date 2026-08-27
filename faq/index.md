@@ -10,7 +10,7 @@
 
 ## Agent 进程仍在运行，为什么面板显示离线？
 
-先确认 Komari 已更新到 `2.2.3` 第四次构建 `0huo552`，Agent 已更新到 `2.2.0.2`。两端需要同时更新：服务端负责维持在线判定，Agent 负责在 WebSocket 被关闭或写入卡住后自动重连。
+先确认 Lite 已更新到 `2.3.0`，Lite-agent 已更新到 `2.3.0.0` 或更新的兼容版本。两端需要同时更新：服务端负责维持在线判定，Agent 通过心跳、读超时和快速重连恢复中断连接。
 
 版本已经正确仍反复离线时，继续检查反向代理 WebSocket 超时、Cloudflare Access、DNS 和 IPv4/IPv6 路径。状态与日志命令见 [Agent 安装与维护](/install/agent)。
 
@@ -32,7 +32,7 @@
 
 ## 为什么关闭内置 HTTPS 后 HTTP 仍无法访问？
 
-确认 HTTP 端口仍被容器映射并被防火墙允许。浏览器可能记住 HSTS，端口也可能仍写成 HTTPS 端口。直接检查 `http://主机:25774` 和后端启动日志。
+确认 HTTP 端口仍被容器映射并被防火墙允许。浏览器可能记住 HSTS，端口也可能仍写成 HTTPS 端口。直接检查 `http://主机:27777` 和后端启动日志。
 
 ## 为什么容器映射了 HTTPS 端口仍访问不了？
 
@@ -52,7 +52,7 @@
 
 ## 启用内置 HTTPS 后，Linux 在线更新失败？
 
-`2.2.3` 已修复本机证书名称校验导致的误判。如果仍失败，确认当前是 Linux 直装、由 `komari.service` 管理，并且构建码不低于同版本第一次更新；当前稳定构建码为 `0huo552`。Docker 和 Windows 不走这条一键更新通道。
+当前 2.3.0 已包含本机证书名称校验修复。如果仍失败，确认当前是由官方脚本安装并由 `lite.service` 管理的 Linux 直装环境，数据目录和数据库也满足原子回退条件。Docker、Windows 和外置指标数据库不走这条一键更新通道。
 
 ## 如何提交有效问题？
 
@@ -64,4 +64,4 @@
 - 相关时间段的日志。
 - 可复现步骤与浏览器控制台错误。
 
-提交到 [nuomiiiii/komari Issues](https://github.com/nuomiiiii/komari/issues)。公开内容前先删除域名、IP、Token、Tunnel 凭据和备份文件。
+提交到 [nuomiiiii/lite Issues](https://github.com/nuomiiiii/lite/issues)。公开内容前先删除域名、IP、Token、Tunnel 凭据和备份文件。

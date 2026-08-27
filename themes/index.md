@@ -2,7 +2,7 @@
 
 主题管理用于导入、启用、更新、配置和移除公开大屏主题。主题市场与已安装主题位于同一管理流程中，避免跳转后失去当前上下文。
 
-从 `2.2.1` 起，系统 Web UI 与主题已经解耦：主题只影响公开大屏，不会替换管理后台、初始化、远程终端、文件管理或 404 等系统页面。`komari-web` 独立控制这些界面。`2.2.2` 完成了与原上游主题代码的进一步解耦，公开大屏继续由当前启用主题提供。
+从 `2.2.1` 起，系统 Web UI 与主题已经解耦：主题只影响公开大屏，不会替换管理后台、初始化、远程终端、文件管理或 404 等系统页面。[Lite-web](https://github.com/nuomiiiii/Lite-web) 独立控制这些界面，公开大屏由当前启用主题提供。
 
 ## 导入与启用
 
@@ -11,16 +11,17 @@
 3. 在已安装主题中选择并启用。
 4. 回到公共首页确认实际主题已经切换。
 
-全新安装默认提供 Nezha 主题。它与其他主题一样支持更新和删除，但只有在系统中还存在另一个可用主题时才能删除。主题管理始终要求至少保留一个可用主题，避免公开大屏没有渲染入口。
+全新安装默认提供 [Lite-Theme](https://github.com/nuomiiiii/Lite-theme)。它与其他主题一样支持更新和删除，但只有在系统中还存在另一个可用主题时才能删除。主题管理始终要求至少保留一个可用主题，避免公开大屏没有渲染入口。
 
-原经典主题不再捆绑在 Komari 中。如需使用，可单独安装 [komari-Classic](https://github.com/nuomiiiii/komari-Classic)；它是独立提取版本，不代表后续一定持续维护。
+原经典主题不再捆绑在 Lite 中。如需使用，可单独安装 [lite-Classic](https://github.com/nuomiiiii/lite-Classic)；它是独立提取版本，不代表后续一定持续维护。
 
 导入成功但首页仍是默认主题时，检查：
 
 - 主题是否只是安装而没有启用。
 - 浏览器或 Cloudflare 是否缓存旧首页和 Service Worker。
 - 主题清单是否声明了正确入口文件。
-- 主题文件是否与当前 Komari Lite 版本兼容。
+- 主题文件是否与当前 Lite 版本兼容。
+- 主题包根目录是否包含优先使用的 `Lite-theme.json`，或用于旧主题兼容的 `komari-theme.json`。
 
 ## 主题设置
 
@@ -28,13 +29,15 @@
 
 主题设置入口只在主题清单声明了有效配置时显示。Logo、预览图、国家/地区图标和配置页资源应使用主题包内的正确相对路径，避免在子路径部署或更新主题后丢失。
 
-`2.2.3` 起，主题配置除开关、选择、数字、文本和富文本外，还可以声明节点选择器和 Ping 任务选择器，直接关联当前实例中的服务器或延迟监测任务。清单中的名称、作者和描述可以写成多语言对象；后台优先匹配当前语言，缺少对应条目时回退到可用文本。现有第三方主题的上传、安装与配置方式保持不变。
+主题配置除开关、选择、数字、文本和富文本外，还可以声明节点选择器和 Ping 任务选择器，直接关联当前实例中的服务器或延迟监测任务。清单中的名称、作者和描述可以写成多语言对象；后台优先匹配当前语言，缺少对应条目时回退到可用文本。
+
+Lite 2.3.0 优先读取 `Lite-theme.json`。为兼容旧主题，只有 `komari-theme.json` 的主题包仍可安装；同一主题同时存在两个清单时以 `Lite-theme.json` 为准。新主题应使用新文件名。
 
 备份恢复、首次安装恢复和主题上传对大文件使用分段传输。进度会显示已传输字节和百分比，达到 100% 后再进入服务端处理；网络中断后只需重试失败部分。
 
 ## 仪表盘跳转
 
-仪表盘排行通过当前启用主题的 `komari-theme.json` 读取服务器详情、网络总览和 Ping 任务参数，不与 Nezha 或其他具体主题绑定：
+仪表盘排行通过当前启用主题的清单读取服务器详情、网络总览和 Ping 任务参数，不与 Lite-Theme 或其他具体主题绑定：
 
 - 平均时延和延迟抖动是多任务综合结果，进入服务器网络总览。
 - 近 15 分钟丢包进入该服务器最差的具体 Ping 任务。
@@ -62,6 +65,6 @@
 - [API 与 RPC2](/development/api)
 - [Agent RFC](/development/agent-rfc)
 - [兼容与公共接口](/development/compatibility)
-- Web 仓库：[nuomiiiii/komari-web](https://github.com/nuomiiiii/komari-web)
-- 默认主题：[nuomiiiii/nezha](https://github.com/nuomiiiii/nezha)
-- 经典主题独立提取版：[nuomiiiii/komari-Classic](https://github.com/nuomiiiii/komari-Classic)
+- Web 仓库：[nuomiiiii/Lite-web](https://github.com/nuomiiiii/Lite-web)
+- 默认主题：[nuomiiiii/Lite-theme](https://github.com/nuomiiiii/Lite-theme)（当前 `1.0.1`）
+- 经典主题独立提取版：[nuomiiiii/lite-Classic](https://github.com/nuomiiiii/lite-Classic)

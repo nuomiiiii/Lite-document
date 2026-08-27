@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: "Komari Lite"
+  name: "Lite"
   text: "服务器监控与远程管理手册"
-  tagline: 面向 Komari Lite 分支的安装、升级、数据库、流量、远程终端、主题与安全配置说明。
+  tagline: Lite 2.3.0 的安装、升级、账单、监控、远程管理、主题与安全配置说明。
   image:
-    src: /assets/komari-icon.svg?v=3
-    alt: Komari Lite
+    src: /assets/lite-icon.svg?v=1
+    alt: Lite
   actions:
     - theme: brand
       text: 开始部署
@@ -27,6 +27,8 @@ features:
     details: 安装、状态检查、日志排查、在线配置、更新、重启和安全卸载。
   - title: 流量与通知
     details: 统一说明限额、重置日、计费流量、日报周报月报、默认配置和告警静默。
+  - title: 账单中心
+    details: 汇总服务器资费、日月年费用、附加费用、剩余价值、到期提醒和多币种参考金额。
   - title: 远程管理
     details: Agent 接入、远程终端、文件管理、任务下发和反向代理兼容要求。
   - title: HTTPS 与安全
@@ -35,4 +37,4 @@ features:
     details: 主题安装、公共数据兼容、主题市场，以及开发时需要保持的字段约定。
 ---
 
-<div class="version-note"><strong>当前口径</strong><span>手册以 Komari Lite 2.2.3 正式版为基线；后续快照差异以对应 Release 标注为准。</span></div>
+<div class="version-note"><strong>当前口径</strong><span>手册以 Lite 2.3.0、Lite-agent 2.3.0.0 和 Lite-Theme 1.0.1 正式版为基线。</span></div>

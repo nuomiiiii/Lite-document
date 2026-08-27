@@ -1,8 +1,8 @@
-# Komari Lite 文档
+# Lite 文档
 
-![Komari Lite](public/assets/komari-banner.svg)
+![Lite](public/assets/lite-banner.svg)
 
-这是 [nuomiiiii/komari](https://github.com/nuomiiiii/komari) 的独立中文手册，基于 VitePress 构建。
+这是 [nuomiiiii/lite](https://github.com/nuomiiiii/lite) 的独立中文手册，基于 VitePress 构建。
 
 在线访问：[lite.komari.wiki](https://lite.komari.wiki/)
 
@@ -25,8 +25,8 @@ GitHub Pages 构建会根据当前 Pages 域名自动设置资源基础路径；
 
 ## 内容口径
 
-- 稳定版内容以 Komari `2.2.3` 第四次更新（构建码 `0huo552`）和 Agent `2.2.0.2` 为基线。
-- 已转正功能按 `2.2.3` 的实际行为说明；尚未发布的快照功能不混入稳定版口径。
+- 稳定版内容以 Lite `2.3.0`、Lite-agent `2.3.0.0` 和 Lite-Theme `1.0.1` 为基线。
+- 已转正功能按正式版本的实际行为说明；尚未发布的快照功能不混入稳定版口径。
 - 与上游行为一致的功能会明确写明一致；仅兼容数据或接口的功能会注明兼容范围；Lite 差异会单独标注。
-- 当前 `nuomiiiii/komari-agent` 与上游官方 Agent 的协议和默认行为一致，但仓库、二进制与更新源仍以 `nuomiiiii` 分支为准。
+- 当前配套 Agent 使用独立的 [`nuomiiiii/Lite-agent`](https://github.com/nuomiiiii/Lite-agent) 仓库、`Lite-agent` 二进制和更新源。
 - Agent 页面覆盖安装、状态、日志、更新、重启、卸载和凭据保留，不再只提供安装命令。

@@ -1,23 +1,23 @@
 # Linux 脚本安装
 
-本项目官方安装脚本适合使用 systemd 的常见 Linux 发行版。这里的“官方”专指 `nuomiiiii/komari` 仓库下方命令使用的脚本，不是上游仓库的安装脚本。
+本项目官方安装脚本适合使用 systemd 的常见 Linux 发行版。这里的“官方”专指 `nuomiiiii/lite` 仓库下方命令使用的脚本，不是上游仓库的安装脚本。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/nuomiiiii/komari/main/install-komari.sh -o install-komari.sh
-chmod +x install-komari.sh
-sudo ./install-komari.sh
+curl -fsSL https://raw.githubusercontent.com/nuomiiiii/lite/main/install-lite.sh -o install-lite.sh
+chmod +x install-lite.sh
+sudo ./install-lite.sh
 ```
 
-脚本会让你选择稳定版或快照版、监听端口和安装操作。默认安装目录为 `/opt/komari`，服务名为 `komari.service`。
+脚本会让你选择稳定版或快照版、监听端口和安装操作。默认安装目录为 `/opt/lite`，服务名为 `lite.service`。
 
 下载、校验或服务启动失败时，脚本会回滚到安装前状态，避免留下不完整的程序、服务单元或数据目录。旧版数据目录与完整备份可继续沿用；新部署仍按原安装流程初始化。
 
 ## 常用命令
 
 ```bash
-sudo systemctl status komari
-sudo systemctl restart komari
-sudo journalctl -u komari -f
+sudo systemctl status lite
+sudo systemctl restart lite
+sudo journalctl -u lite -f
 ```
 
 再次运行安装脚本可进入更新、卸载或维护菜单。
@@ -27,12 +27,16 @@ sudo journalctl -u komari -f
 后台一键更新只在运行环境满足原子回退要求时开放，主要包括：
 
 - 由本项目官方脚本安装并通过 systemd 管理。
-- 当前进程属于 `komari.service`。
+- 当前进程属于 `lite.service`。
 - 主数据库和监控数据库位于受管 `data` 目录内。
 - 未使用外置 MySQL 或 PostgreSQL 指标库。
 - 数据目录布局允许完整备份和原子恢复。
 
-Docker、Windows、非 systemd 或外置指标数据库会保留 Release 入口，但不会伪装成可以安全一键回退。
+Docker、Windows、非 systemd 或外置指标数据库会保留 Release 入口，但不会显示为可安全一键回退。
+
+::: info 从旧命名升级
+从 Komari 或 Komari Lite 脚本部署升级时，Lite 会沿用已有数据和明确配置的监听端口。完成迁移后，新脚本使用 `/opt/lite`、`Lite` 二进制和 `lite.service`；不要同时启动新旧服务指向同一份数据。
+:::
 
 启用内置 HTTPS 后，Linux 直装的在线更新访问本机面板时，不再因证书域名与 `127.0.0.1` 不一致而误判失败。回滚失败后也不会反复重启更新辅助任务。
 

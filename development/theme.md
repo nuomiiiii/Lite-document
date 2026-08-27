@@ -1,18 +1,18 @@
 # 主题开发
 
-Komari Lite 主题是一个包含静态站点和清单文件的 ZIP 包。主题只替换公共监控页面；管理员后台、远程终端和文件管理继续使用内置界面。
+Lite 主题是一个包含静态站点和清单文件的 ZIP 包。主题只替换公共监控页面；管理员后台、首次安装、远程终端和文件管理继续使用 Lite Web。
 
-本页按 Lite 当前服务端和 `nuomiiiii/komari-web` 的实际行为整理。API 字段见 [API 与 RPC2](/development/api)。
+本页按 Lite 当前服务端和 `nuomiiiii/Lite-web` 的实际行为整理。API 字段见 [API 与 RPC2](/development/api)。
 
 ::: info 与上游主题的关系
-Lite 继续兼容上游主题的 ZIP、`komari-theme.json` 和基础公共接口约定，因此未标注差异的基础打包与接入方式可按相同方式使用。Lite 新增的配置类型、缓存行为或注入差异会在对应小节明确标注，不需要主题作者自行猜测。
+Lite 2.3.0 优先使用 `Lite-theme.json`，并继续兼容旧主题的 `komari-theme.json` 和基础公共接口约定。新主题应使用新清单名；未标注差异的基础打包与接入方式仍可按兼容约定使用。
 :::
 
 ## 最小目录
 
 ```text
 my-theme.zip
-├── komari-theme.json
+├── Lite-theme.json
 ├── preview.png
 └── dist/
     ├── index.html
@@ -22,11 +22,11 @@ my-theme.zip
         └── app-a1b2c3.css
 ```
 
-ZIP 根目录必须直接包含 `komari-theme.json`。不要再套一层仓库目录，也不要上传 GitHub 自动生成的源码压缩包。
+ZIP 根目录必须直接包含 `Lite-theme.json`。兼容旧包时也接受 `komari-theme.json`，但同一包同时存在两个清单时以 `Lite-theme.json` 为准。不要再套一层仓库目录，也不要上传 GitHub 自动生成的源码压缩包。
 
 主题可正常使用的必要条件：
 
-- 根目录存在有效的 `komari-theme.json`。
+- 根目录存在有效的 `Lite-theme.json`（旧主题可使用 `komari-theme.json`）。
 - `dist/index.html` 是可直接运行的生产构建。
 - HTML 引用的所有 JS、CSS、字体和图片都包含在包内或来自明确允许的 HTTPS 地址。
 - 自定义路由不占用 `/admin` 和 `/terminal`。
@@ -36,20 +36,20 @@ ZIP 根目录必须直接包含 `komari-theme.json`。不要再套一层仓库�
 ```json
 {
   "name": {
-    "zh-CN": "Komari 示例主题",
-    "en": "Komari Example Theme"
+    "zh-CN": "Lite 示例主题",
+    "en": "Lite Example Theme"
   },
   "short": "example-theme",
   "description": {
-    "zh-CN": "面向 Komari Lite 的响应式主题",
-    "en": "A responsive theme for Komari Lite"
+    "zh-CN": "面向 Lite 的响应式主题",
+    "en": "A responsive theme for Lite"
   },
   "version": "1.0.0",
   "author": {
     "zh-CN": "示例作者",
     "en": "Example Author"
   },
-  "url": "https://github.com/example/komari-theme",
+  "url": "https://github.com/example/lite-theme",
   "preview": "preview.png",
   "navigation": {
     "server_detail": "/server/{uuid}",
@@ -95,14 +95,14 @@ ZIP 根目录必须直接包含 `komari-theme.json`。不要再套一层仓库�
 
 路径必须是站内绝对路径，不能包含协议、域名、反斜杠或越级片段。服务端会对 UUID 和查询参数进行编码。平均时延与延迟抖动排行使用 `server_network`；近 15 分钟丢包使用 `server_detail` 并附带最差任务 ID。
 
-未提供 `navigation` 的旧主题仍可安装，服务端会使用兼容回退地址。新主题应显式声明这三个字段，使不同 Komari 版本和第三方主题切换时都能保持正确跳转。
+未提供 `navigation` 的旧主题仍可安装，服务端会使用兼容回退地址。新主题应显式声明这三个字段，使不同 Lite 版本和第三方主题切换时都能保持正确跳转。
 
 服务端上传限制：
 
 - 最多 10,000 个文件。
 - 单文件解压后最多 128 MiB。
 - 全包解压后最多 512 MiB。
-- `komari-theme.json` 最多 1 MiB。
+- `Lite-theme.json`（或旧兼容清单 `komari-theme.json`）最多 1 MiB。
 
 这些是安全上限，不是推荐体积。实际主题应尽量保持在数 MiB 内，并压缩图片和字体。
 
@@ -294,7 +294,7 @@ raw HTML 来自主题包并在后台 iframe 中显示。只安装可信主题；
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="A simple server monitor tool." />
-    <title>Komari Monitor</title>
+    <title>Lite Monitor</title>
     <script type="module" src="/assets/app-a1b2c3.js"></script>
     <link rel="stylesheet" href="/assets/app-a1b2c3.css" />
   </head>
@@ -427,7 +427,7 @@ const metrics = await rpc("public:queryMetrics", {
 构建后从产物目录创建 ZIP，确保 manifest 位于根目录：
 
 ```text
-komari-theme.json
+Lite-theme.json
 preview.png
 dist/index.html
 dist/assets/...
@@ -448,8 +448,8 @@ dist/assets/...
 
 ## 与默认前端的关系
 
-- 前端仓库：[nuomiiiii/komari-web](https://github.com/nuomiiiii/komari-web)
-- 服务端仓库：[nuomiiiii/komari](https://github.com/nuomiiiii/komari)
+- 前端仓库：[nuomiiiii/Lite-web](https://github.com/nuomiiiii/Lite-web)
+- 服务端仓库：[nuomiiiii/lite](https://github.com/nuomiiiii/lite)
 - 安装与启用：[主题管理](/themes/)
 - 接口字段：[API 与 RPC2](/development/api)
 - 兼容策略：[兼容与公共接口](/development/compatibility)

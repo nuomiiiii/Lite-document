@@ -1,9 +1,9 @@
 # Agent RFC
 
-本页描述 Komari Lite 服务端与 `nuomiiiii/komari-agent` 当前实际使用的线协议，供第三方 Agent、采集器和兼容客户端开发。它不是对上游未来协议的承诺。
+本页描述 Lite 服务端与 `nuomiiiii/Lite-agent` 当前实际使用的线协议，供第三方 Agent、采集器和兼容客户端开发。它不是对上游未来协议的承诺。
 
 ::: info Agent 口径
-本文提到“上游官方 Agent”时，Komari Lite 配套的 `nuomiiiii/komari-agent` 与其当前协议、默认参数和远程能力一致，并已与 Lite 服务端逐项核对。因此下文对上游官方 Agent 行为的说明也适用于 Lite 配套 Agent；只有明确标注“Lite 差异”“上游旧文档”或“第三方 Agent”时才需要区别处理。
+本文以 Lite-agent `2.3.0.0` 为实现基线。Lite 继续保留上游兼容端点、消息和 `X-Komari-*` 请求头；这些名称属于线协议兼容层，不代表 Agent 仍从旧仓库发布或更新。
 :::
 
 ::: danger 安全边界
@@ -22,7 +22,7 @@ Agent Token 等同于节点身份。不要写入日志、URL 分享、前端代�
 | 回程路由 | 不支持 | `agent.route` / `agent.routeResult` |
 | 推荐用途 | 旧 Agent 兼容 | 新 Agent 默认协议 |
 
-Komari Lite 当前配套 Agent 默认 `--protocol-version=2`，与上游官方 Agent 一致。连续 3 次确认属于 v2 协议或 HTTP 状态错误后，会在当前连接周期回退到 v1。
+Lite 当前配套 Agent 默认 `--protocol-version=2`，与上游官方 Agent 一致。连续 3 次确认属于 v2 协议或 HTTP 状态错误后，会在当前连接周期回退到 v1。
 
 ## 认证与端点
 
@@ -524,7 +524,7 @@ Ping：
 
 v1 没有回程路由协议，也没有与 v2 相同的可靠 fallback 事件队列。
 
-## 配套 Agent 参数（与上游官方 Agent 一致）
+## Lite-agent 参数
 
 | 参数 | 环境变量 | 默认 | 说明 |
 | --- | --- | --- | --- |
@@ -542,7 +542,7 @@ v1 没有回程路由协议，也没有与 v2 相同的可靠 fallback 事件队
 | `--month-rotate` | `AGENT_MONTH_ROTATE` | `0` | 流量重置日 |
 | `--gpu` | `AGENT_ENABLE_GPU` | `false` | 详细 GPU 上报 |
 
-命令行、环境变量和 JSON 配置文件均可设置。当前启动顺序中，环境变量会覆盖命令行值，随后 JSON 配置文件会覆盖前两者；部署工具应避免在多个来源重复设置同一字段。
+命令行、环境变量和 JSON 配置文件均可设置。优先级从低到高为：默认值、JSON 配置文件、环境变量、明确传入的命令行参数。没有显式传入的命令行参数不会用默认值覆盖其他配置来源；部署工具仍应避免在多个来源重复设置同一字段。
 
 ## 实现检查清单
 

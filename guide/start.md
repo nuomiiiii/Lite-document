@@ -1,10 +1,10 @@
 # 快速开始
 
-这份手册面向 Komari Lite [**nuomiiiii/komari**](https://github.com/nuomiiiii/komari)，不是上游 `komari-monitor/komari` 的原样镜像。
+这份手册面向 Lite [**nuomiiiii/lite**](https://github.com/nuomiiiii/lite)，不是上游 `komari-monitor/komari` 的原样镜像。
 
 安装脚本、Docker 镜像、数据库迁移和后台功能均以本分支为准。
 
-当前配套 Agent 与上游官方 Agent 的协议和默认行为一致，但下载仓库、二进制与更新源以 `nuomiiiii/komari-agent` 为准。当前稳定搭配为 Komari `2.2.3` 第四次更新与 Agent `2.2.0.2`。
+当前配套 Agent 为 [`nuomiiiii/Lite-agent`](https://github.com/nuomiiiii/Lite-agent)，稳定版为 `2.3.0.0`。安装脚本、二进制、Docker 镜像和自动更新均使用 Lite-agent 自己的仓库与名称。
 
 手册中提到上游或官方实现时，会明确说明是“行为一致”“仅兼容指定范围”还是“Lite 存在差异”；没有明确结论的内容不应自行推断为完全相同。
 
@@ -16,7 +16,9 @@
 | 常见 Linux + systemd | [Linux 脚本安装](/install/linux) | 自带安装、更新、服务管理菜单 |
 | Windows 或特殊架构 | [二进制安装](/install/binary) | 手动管理进程与数据目录 |
 
-默认 Web 端口为 `25774`。首次打开 `http://服务器地址:25774` 后，按照初始化页面创建管理员账号。未初始化时即使先访问公开大屏，也会自动进入初始化流程。
+新安装的默认 Web 端口为 `27777`。首次打开 `http://服务器地址:27777` 后，按五步引导依次完成欢迎、管理员、站点信息、指标数据库和确认。未初始化时即使先访问公开大屏，也会自动进入安装引导。
+
+欢迎页可以上传 Lite 完整备份直接恢复。进入第二步后恢复入口会隐藏；需要恢复时请返回欢迎页。详见[首次安装引导](#首次安装引导)。
 
 ::: warning 初次安装默认不会强制 HTTPS
 HTTP 自动跳转默认关闭。先确认面板可以正常访问，再配置反向代理或内置 HTTPS，避免证书或端口错误导致无法进入后台。
@@ -33,11 +35,22 @@ HTTP 自动跳转默认关闭。先确认面板可以正常访问，再配置反
 7. 在“外观与主题 → 主题管理”确认公开大屏主题可用；系统必须至少保留一个主题。
 8. 如果后台切换动画造成不适，可在“系统设置 → 通用”开启“减少动态效果”。
 9. 需要按分组和国家/地区整理新节点时，可开启“系统设置 → 通用 → 新增服务器自动排序”；该开关默认关闭，不会重排已有节点。
+10. 在“账单中心”确认服务器资费、到期时间和显示币种是否正确。
+
+## 首次安装引导
+
+1. **欢迎**：确认本地服务连接状态；已有完整备份时从这里恢复。
+2. **管理员**：创建后台登录用户名和密码。密码至少 8 位，并包含大小写字母和数字。
+3. **站点信息**：填写站点名称与选填说明，这些内容会用于管理后台和公开大屏。
+4. **数据存储**：小型部署可选择 SQLite；也可填写 MySQL 或 PostgreSQL DSN 作为外部指标数据库。
+5. **确认**：核对管理员、站点和数据库设置，可返回对应步骤修改，确认后完成安装并进入后台。
+
+安装引导只写入当前服务器。SQLite 路径必须可写；外部数据库 DSN 会按填写内容保存。首次安装完成后，备份恢复改由后台的备份页面处理。
 
 ## 常用入口
 
-- 版本发布：[GitHub Releases](https://github.com/nuomiiiii/komari/releases)
-- Agent：[nuomiiiii/komari-agent](https://github.com/nuomiiiii/komari-agent)
+- 版本发布：[GitHub Releases](https://github.com/nuomiiiii/lite/releases)
+- Agent：[nuomiiiii/Lite-agent](https://github.com/nuomiiiii/Lite-agent)
 - Agent 安装、日志与卸载：[Agent 安装与维护](/install/agent)
 
 下一步：[使用 Docker 部署](/install/docker)、[使用 Linux 脚本安装](/install/linux)，或在服务端部署完成后[安装 Agent](/install/agent)。
