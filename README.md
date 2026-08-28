@@ -4,7 +4,7 @@
 
 这是 [nuomiiiii/lite](https://github.com/nuomiiiii/lite) 的独立中文手册，基于 VitePress 构建。
 
-在线访问：[lite.komari.wiki](https://lite.komari.wiki/)
+在线访问：[https://nuomiiiii.github.io/Lite-document/](https://nuomiiiii.github.io/Lite-document/)
 
 ## 本地运行
 
@@ -21,7 +21,7 @@ pnpm docs:build
 
 构建产物位于 `.vitepress/dist`。
 
-GitHub Pages 构建会根据当前 Pages 域名自动设置资源基础路径；主域名使用 `/`，仓库路径部署使用 `/komari-document/`。
+GitHub Pages 构建会根据当前 Pages 域名自动设置资源基础路径；仓库路径部署使用 `/Lite-document/`。
 
 ## 内容口径
 
