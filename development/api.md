@@ -124,7 +124,7 @@ API Key 调用不再重复要求 2FA。不要把管理员 Cookie、API Key 或 2
   "status": "success",
   "message": "",
   "data": {
-    "version": "2.3.0",
+    "version": "2.3.1",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }
@@ -281,7 +281,7 @@ socket.addEventListener("message", (event) => {
   "jsonrpc": "2.0",
   "id": "version-1",
   "result": {
-    "version": "2.3.0",
+    "version": "2.3.1",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }
@@ -344,7 +344,7 @@ socket.addEventListener("message", (event) => {
 
 `admin:*` 方法会随后台能力演进。外部自动化应只调用经过验证的具体方法，并固定兼容版本，不要把后台路由列表当作永久稳定 SDK。
 
-2.3.0 新增的账单中心管理方法包括 `admin:getBillingOverview`、`admin:getBillingServers`、`admin:getBillingMonthly`、`admin:getBillingYearly`、`admin:getBillingEntries`、`admin:createBillingTrafficReset`、`admin:createBillingIPChange` 和 `admin:voidBillingEntry`。这些方法需要管理员权限，属于随后台演进的管理接口，不是匿名主题 API。
+账单中心管理方法包括 `admin:getBillingOverview`、`admin:getBillingServers`、`admin:getBillingMonthly`、`admin:getBillingYearly`、`admin:getBillingEntries`、`admin:createBillingTrafficReset`、`admin:createBillingIPChange`、`admin:createBillingOneTimeFee` 和 `admin:voidBillingEntry`。这些方法需要管理员权限，属于随后台演进的管理接口，不是匿名主题 API。
 
 ## 指标查询
 

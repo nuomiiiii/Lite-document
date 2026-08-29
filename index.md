@@ -4,7 +4,7 @@ layout: home
 hero:
   name: "Lite"
   text: "服务器监控与远程管理手册"
-  tagline: Lite 2.3.0 的安装、升级、账单、监控、远程管理、主题与安全配置说明。
+  tagline: Lite 的安装、升级、账单、监控、远程管理、主题与安全配置说明。
   image:
     src: /assets/lite-icon.svg?v=1
     alt: Lite
@@ -36,5 +36,3 @@ features:
   - title: 主题与接口
     details: 主题安装、公共数据兼容、主题市场，以及开发时需要保持的字段约定。
 ---
-
-<div class="version-note"><strong>当前口径</strong><span>手册以 Lite 2.3.0、Lite-agent 2.3.0.0 和 Lite-Theme 1.0.1 正式版为基线。</span></div>

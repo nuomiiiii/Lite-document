@@ -2,9 +2,30 @@
 
 通知渠道、规则和报告分开配置。渠道负责把消息发出去；规则决定何时触发。
 
-## 新服务器默认配置
+## Telegram JavaScript 模板
 
-<div class="version-note"><strong>2.2.3</strong><span>离线通知、延迟监测告警和流量定时报告可分别保存一套只作用于新服务器的默认配置。</span></div>
+Lite 自带的通知渠道可以直接使用；需要 Telegram 品牌图、结构化消息和按告警类型跳转时，可按需使用这份可选模板：
+
+<a href="../downloads/lite-telegram-notification.js" download>下载 Lite Telegram 通知 JS 模板</a>
+
+使用前只需修改文件顶部的配置：
+
+| 配置 | 填写内容 |
+| --- | --- |
+| `TG_TOKEN` | 由 Telegram BotFather 生成的 Bot Token |
+| `TG_CHAT_ID` | 接收通知的会话或群组 ID |
+| `PANEL_URL` | Lite 面板完整地址，例如 `https://status.example.com` |
+| `PHOTO_URL` | 可公开访问的首图地址；不使用首图时可留空 |
+| `SEND_BRAND_IMAGE` | `true` 发送首图，`false` 只发文本 |
+| `TIME_ZONE_OFFSET` | 消息时间的 UTC 时区偏移，北京时间为 `8` |
+
+配置后进入“系统设置 → 通知渠道”，选择 `JavaScript`，将整份脚本粘贴到“JavaScript 代码”并保存，最后使用测试发送确认 Bot、会话 ID 和面板链接均可用。脚本会根据通知类型跳转到服务器概览、用量统计、延迟监测、回程线路或账单页面；日报、周报和月报跳转到仪表盘。
+
+::: warning 保护 Bot Token
+JavaScript 模板会保存 Bot Token。只在自己管理的 Lite 实例中使用，不要把填过 Token 的脚本发布到公开仓库或发给他人。
+:::
+
+## 新服务器默认配置
 
 进入对应通知页面后，使用“默认配置”：
 
@@ -20,13 +41,9 @@
 
 ### 默认开启
 
-<div class="version-note"><strong>2.2.2</strong><span>新增或编辑负载通知规则时可开启“默认开启”。</span></div>
-
 开启后，之后新加入的服务器会自动纳入该规则。已经存在的服务器不会因为这个开关被追加或移除。需要让旧服务器也使用同一规则时，仍应在规则中手动选择。
 
 ### 当前告警与静默
-
-<div class="version-note"><strong>2.2.3</strong><span>负载通知增加“当前告警”视图，并支持按服务器静默通知。</span></div>
 
 “当前告警”只列出正在触发的负载告警，可按告警规则和服务器搜索。
 

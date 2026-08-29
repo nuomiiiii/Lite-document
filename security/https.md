@@ -1,7 +1,5 @@
 # 内置 HTTPS
 
-<div class="version-note"><strong>2.3.0</strong><span>新安装默认 HTTPS 端口为 36888，内置 HTTPS 仍保持关闭；从旧数据升级会保留已有 HTTPS 监听设置。</span></div>
-
 内置 HTTPS 同时保护 Web 页面、后台 API、Agent 上报、导入导出、任务下发、文件管理、终端和实时连接。前端会随页面协议使用 `HTTPS` 和 `WSS`，避免混合内容。
 
 ## 默认状态

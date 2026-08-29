@@ -13,6 +13,8 @@
 
 全新安装默认提供 [Lite-Theme](https://github.com/nuomiiiii/Lite-theme)。它与其他主题一样支持更新和删除，但只有在系统中还存在另一个可用主题时才能删除。主题管理始终要求至少保留一个可用主题，避免公开大屏没有渲染入口。
 
+默认 Lite-Theme 会按 CPU 核心数判断负载颜色，可选显示卡片带宽；单线路概览只使用所选探测任务，首页和网络页签会复用实时状态缓存，并能忽略非 JSON WebSocket 消息，避免单条异常消息中断页面更新。
+
 原经典主题不再捆绑在 Lite 中。如需使用，可单独安装 [lite-Classic](https://github.com/nuomiiiii/lite-Classic)；它是独立提取版本，不代表后续一定持续维护。
 
 导入成功但首页仍是默认主题时，检查：
@@ -31,7 +33,7 @@
 
 主题配置除开关、选择、数字、文本和富文本外，还可以声明节点选择器和 Ping 任务选择器，直接关联当前实例中的服务器或延迟监测任务。清单中的名称、作者和描述可以写成多语言对象；后台优先匹配当前语言，缺少对应条目时回退到可用文本。
 
-Lite 2.3.0 优先读取 `Lite-theme.json`。为兼容旧主题，只有 `komari-theme.json` 的主题包仍可安装；同一主题同时存在两个清单时以 `Lite-theme.json` 为准。新主题应使用新文件名。
+Lite 优先读取 `Lite-theme.json`。为兼容旧主题，只有 `komari-theme.json` 的主题包仍可安装；同一主题同时存在两个清单时以 `Lite-theme.json` 为准。新主题应使用新文件名。
 
 备份恢复、首次安装恢复和主题上传对大文件使用分段传输。进度会显示已传输字节和百分比，达到 100% 后再进入服务端处理；网络中断后只需重试失败部分。
 
@@ -66,5 +68,5 @@ Lite 2.3.0 优先读取 `Lite-theme.json`。为兼容旧主题，只有 `komari-
 - [Agent RFC](/development/agent-rfc)
 - [兼容与公共接口](/development/compatibility)
 - Web 仓库：[nuomiiiii/Lite-web](https://github.com/nuomiiiii/Lite-web)
-- 默认主题：[nuomiiiii/Lite-theme](https://github.com/nuomiiiii/Lite-theme)（当前 `1.0.1`）
+- 默认主题：[nuomiiiii/Lite-theme](https://github.com/nuomiiiii/Lite-theme)
 - 经典主题独立提取版：[nuomiiiii/lite-Classic](https://github.com/nuomiiiii/lite-Classic)

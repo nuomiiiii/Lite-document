@@ -5,7 +5,7 @@ Lite 主题是一个包含静态站点和清单文件的 ZIP 包。主题只替�
 本页按 Lite 当前服务端和 `nuomiiiii/Lite-web` 的实际行为整理。API 字段见 [API 与 RPC2](/development/api)。
 
 ::: info 与上游主题的关系
-Lite 2.3.0 优先使用 `Lite-theme.json`，并继续兼容旧主题的 `komari-theme.json` 和基础公共接口约定。新主题应使用新清单名；未标注差异的基础打包与接入方式仍可按兼容约定使用。
+Lite 优先使用 `Lite-theme.json`，并继续兼容旧主题的 `komari-theme.json` 和基础公共接口约定。新主题应使用新清单名；未标注差异的基础打包与接入方式仍可按兼容约定使用。
 :::
 
 ## 最小目录

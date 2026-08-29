@@ -15,13 +15,15 @@ docker run -d \
   ghcr.io/nuomiiiii/lite:latest
 ```
 
-也可以固定正式版本：
+也可以先单独拉取当前正式版：
 
 ```bash
-docker pull ghcr.io/nuomiiiii/lite:2.3.0
+docker pull ghcr.io/nuomiiiii/lite:latest
 ```
 
 镜像包含 `linux/amd64` 和 `linux/arm64`。
+
+镜像默认时区为 `Asia/Shanghai`。需要使用其他时区时，可以在容器中覆盖 `TZ` 环境变量。镜像声明 Lite 默认 HTTP/HTTPS 端口 `27777` 和 `36888`；是否真正对外开放仍由 `ports` 映射、后台 HTTPS 设置和宿主机防火墙共同决定。
 
 启动后访问：
 
@@ -41,6 +43,8 @@ services:
       - "27777:27777"
     volumes:
       - ./data:/app/data
+    environment:
+      TZ: Asia/Shanghai
 ```
 
 ```bash
@@ -63,9 +67,7 @@ ports:
 
 ## 内置 HTTPS 的额外映射
 
-<div class="version-note"><strong>2.1.12</strong><span>内置 HTTPS 已纳入 2.1.12 正式版；仅当后台已经启用该功能时才需要映射 HTTPS 监听端口。</span></div>
-
-默认 HTTPS 端口为 `36888`，示例：
+仅当后台已经启用内置 HTTPS 时才需要映射 HTTPS 监听端口。默认 HTTPS 端口为 `36888`，示例：
 
 ```yaml
 ports:
@@ -77,6 +79,10 @@ volumes:
 ```
 
 后台填写的是容器内路径，例如 `/certs/fullchain.pem` 和 `/certs/privkey.pem`。
+
+## 容器内程序路径
+
+当前镜像使用 `/app/Lite` 作为程序入口。为了让旧容器配置可以平滑更新，`/app/komari` 仍作为兼容启动路径保留；新建 Compose、面板模板或健康检查时请统一使用 `/app/Lite`，不要继续复制旧路径。
 
 ## 更新容器
 

@@ -6,7 +6,7 @@
 本页参考了[上游自动发现文档](https://komari-document.pages.dev/install/agent-ad)，并按 Lite 当前服务端、管理界面和配套 Agent 重新核对。Lite 配套 Agent 的自动注册、凭据保存和再次启动行为与上游官方 Agent 当前实现一致；安装脚本、Docker 镜像、二进制和更新源使用 `nuomiiiii/Lite-agent`。
 :::
 
-请使用 Lite-agent `2.3.0.0` 或更新的兼容版本。
+请使用[版本与功能范围](/guide/versioning)中列出的配套 Lite-agent。
 
 ## 工作方式
 

@@ -60,9 +60,7 @@ Nginx 位于宿主机时反代 `127.0.0.1:27777`。Nginx 位于另一个容器�
 
 ## Cloudflare Tunnel
 
-<div class="version-note"><strong>2.1.12</strong><span>Cloudflare Tunnel 管理已纳入 2.1.12 正式版，并位于“反向代理”下的独立页签。</span></div>
-
-可在后台保存 Tunnel Token 并启动 `cloudflared`。Token 在服务端加密保存，前端只读取“是否已保存”，不会取回明文。
+Cloudflare Tunnel 管理位于“反向代理”下的独立页签。可在后台保存 Tunnel Token 并启动 `cloudflared`。Token 在服务端加密保存，前端只读取“是否已保存”，不会取回明文。
 
 非 Docker 部署需自行安装 `cloudflared`，或通过 `LITE_CLOUDFLARED_BIN` 指定路径。Docker 环境需确保镜像中包含可执行文件或另行运行 cloudflared 容器。
 

@@ -22,6 +22,7 @@
   --vp-c-divider: #344149;
   --vp-c-bg-soft: #182127;
   --vp-code-color: #ff9389;
+  --vp-home-hero-name-color: #eef3f5;
 }
 
 body {
@@ -106,22 +107,6 @@ body {
 
 .vp-doc code {
   overflow-wrap: anywhere;
-}
-
-.version-note {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  margin: 20px 0;
-  padding: 12px 14px;
-  border-left: 3px solid #e36a5c;
-  background: rgba(227, 106, 92, 0.08);
-  color: var(--vp-c-text-2);
-}
-
-.version-note strong {
-  flex: 0 0 auto;
-  color: #c7483d;
 }
 
 @media (max-width: 640px) {

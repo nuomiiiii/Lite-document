@@ -73,7 +73,7 @@ export default defineConfig({
   base,
   lang: "zh-CN",
   title: "Lite 文档",
-  description: "Lite 安装、升级、管理与开发手册",
+  description: "Lite 部署、使用、排障与主题开发手册",
   cleanUrls: true,
   lastUpdated: true,
   head: [
@@ -91,7 +91,7 @@ export default defineConfig({
       { text: "快速开始", link: "/guide/start" },
       { text: "Agent 运维", link: "/install/agent" },
       { text: "使用指南", link: "/admin/dashboard" },
-      { text: "开发指南", link: "/development/api" },
+      { text: "主题开发", link: "/development/theme" },
       { text: "常见问题", link: "/faq/" },
       { text: "GitHub", link: "https://github.com/nuomiiiii/lite" },
     ],
