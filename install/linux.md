@@ -2,6 +2,14 @@
 
 本项目官方安装脚本适合使用 systemd 的常见 Linux 发行版。这里的“官方”专指 `nuomiiiii/lite` 仓库下方命令使用的脚本，不是上游仓库的安装脚本。
 
+一行安装：
+
+```bash
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/nuomiiiii/lite/main/install-lite.sh)"
+```
+
+如果希望先查看脚本内容，再分步下载和运行：
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/nuomiiiii/lite/main/install-lite.sh -o install-lite.sh
 chmod +x install-lite.sh
@@ -37,8 +45,6 @@ Docker、Windows、非 systemd 或外置指标数据库会保留 Release 入口�
 ::: info 从旧命名升级
 从 Komari 或 Komari Lite 脚本部署升级时，Lite 会沿用已有数据和明确配置的监听端口。完成迁移后，新脚本使用 `/opt/lite`、`Lite` 二进制和 `lite.service`；不要同时启动新旧服务指向同一份数据。
 :::
-
-启用内置 HTTPS 后，Linux 直装的在线更新访问本机面板时，不再因证书域名与 `127.0.0.1` 不一致而误判失败。回滚失败后也不会反复重启更新辅助任务。
 
 ## 防火墙
 

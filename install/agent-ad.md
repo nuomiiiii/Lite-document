@@ -3,7 +3,7 @@
 自动发现用于批量接入服务器。目标服务器上的 Agent 携带自动发现密钥首次连接后，Lite 会自动创建节点并签发独立凭据，不需要在后台逐台添加节点、复制 Token。
 
 ::: info 与上游的关系
-本页参考了[上游自动发现文档](https://komari-document.pages.dev/install/agent-ad)，并按 Lite 当前服务端、管理界面和配套 Agent 重新核对。Lite 配套 Agent 的自动注册、凭据保存和再次启动行为与上游官方 Agent 当前实现一致；安装脚本、Docker 镜像、二进制和更新源使用 `nuomiiiii/Lite-agent`。
+请使用 Lite 后台生成的参数和 [`nuomiiiii/Lite-agent`](https://github.com/nuomiiiii/Lite-agent) 安装包。Lite-agent 会保存自动发现凭据，后续启动时继续使用已经签发的节点身份。
 :::
 
 请使用[版本与功能范围](/guide/versioning)中列出的配套 Lite-agent。

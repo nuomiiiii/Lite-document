@@ -1,8 +1,6 @@
 # 主题开发
 
-Lite 主题是一个包含静态站点和清单文件的 ZIP 包。主题只替换公共监控页面；管理员后台、首次安装、远程终端和文件管理继续使用 Lite Web。
-
-本页按 Lite 当前服务端和 `nuomiiiii/Lite-web` 的实际行为整理。API 字段见 [API 与 RPC2](/development/api)。
+本页供主题开发者使用。Lite 主题是一个包含静态站点和清单文件的 ZIP 包，只替换公共监控页面；管理员后台、首次安装、远程终端和文件管理不受主题影响。API 字段见 [API 与 RPC2](/development/api)。
 
 ::: info 与上游主题的关系
 Lite 优先使用 `Lite-theme.json`，并继续兼容旧主题的 `komari-theme.json` 和基础公共接口约定。新主题应使用新清单名；未标注差异的基础打包与接入方式仍可按兼容约定使用。
@@ -381,35 +379,23 @@ Service Worker 容易跨主题保留旧资源。除非确实需要离线能力�
 3. `/api/clients` WebSocket 获取实时状态。
 4. `public:queryMetrics` 获取图表历史。
 
-示例：
+只请求当前页面需要的节点和时间范围；长时间序列应使用服务端降采样。参数完全相同的结果可以在主题内短时复用。
+
+### 带宽
+
+大屏要显示线路带宽时，从节点资料读取 `bandwidth`，不要从 WebSocket 实时状态或公开备注里的旧套餐字段拼。
 
 ```js
-async function rpc(method, params = {}) {
-  const response = await fetch("/api/rpc2", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      method,
-      params,
-      id: crypto.randomUUID(),
-    }),
-  });
-  const payload = await response.json();
-  if (payload.error) throw new Error(payload.error.message);
-  return payload.result;
+const nodes = await fetch("/api/nodes").then((r) => r.json());
+const bandwidth = String(nodes.data?.find((n) => n.uuid === uuid)?.bandwidth || "").trim();
+if (bandwidth) {
+  // 直接显示，例如 "100 Mbps"
 }
-
-const metrics = await rpc("public:queryMetrics", {
-  metric_keys: ["cpu.usage", "memory.used"],
-  entity_ids: ["node-uuid"],
-  hours: 24,
-  server_downsample: true,
-  max_points: 500,
-});
 ```
 
-主题不要一次读取所有节点的长时间原始序列。按当前页面节点和可见时间范围请求，并缓存参数完全相同的结果。
+- 值为管理员已整理过的文案，主题不必再换算单位。
+- 空字符串表示未设置，不要显示「未知」或 `0`。
+- 实时网速仍看状态里的 `net_in_speed` / `net_out_speed`。
 
 ## 本地存储
 

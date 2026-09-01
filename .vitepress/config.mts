@@ -54,9 +54,12 @@ const sidebar = [
     ],
   },
   {
-    text: "主题与开发",
+    text: "主题",
+    items: [{ text: "主题管理", link: "/themes/" }],
+  },
+  {
+    text: "开发者",
     items: [
-      { text: "主题管理", link: "/themes/" },
       { text: "主题开发", link: "/development/theme" },
       { text: "API 与 RPC2", link: "/development/api" },
       { text: "Agent RFC", link: "/development/agent-rfc" },
@@ -93,7 +96,6 @@ export default defineConfig({
       { text: "使用指南", link: "/admin/dashboard" },
       { text: "主题开发", link: "/development/theme" },
       { text: "常见问题", link: "/faq/" },
-      { text: "GitHub", link: "https://github.com/nuomiiiii/lite" },
     ],
     sidebar,
     outline: { label: "本页目录", level: [2, 3] },

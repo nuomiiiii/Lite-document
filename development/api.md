@@ -161,6 +161,7 @@ API Key 调用不再重复要求 2FA。不要把管理员 Cookie、API Key 或 2
 | `public_remark` | string | 公开备注 |
 | `group` | string | 分组 |
 | `tags` | string | 以分号分隔的标签 |
+| `bandwidth` | string | 管理员填写的线路带宽文案，未填写时为空字符串 |
 | `weight` | number | 排序权重 |
 | `hidden` | boolean | 是否对访客隐藏 |
 | `price` | number | 价格；`-1` 常表示免费 |
@@ -178,6 +179,8 @@ API Key 调用不再重复要求 2FA。不要把管理员 Cookie、API Key 或 2
 | `updated_at` | string | 更新时间 |
 
 主题应优先使用 `effective_traffic_limit` 和 `effective_traffic_type` 展示当前周期额度，不要自行重复叠加校准值。
+
+`bandwidth` 是管理员在服务器设置里填写的展示文案（例如 `100 Mbps`、`1 Gbps`），不是当前实时速率。未填写时为空字符串，主题应直接隐藏，不要显示占位符。实时上传/下载速度仍使用状态接口里的 `net_in_speed` / `net_out_speed`。
 
 ### 最近一分钟状态
 
@@ -217,7 +220,7 @@ API Key 调用不再重复要求 2FA。不要把管理员 Cookie、API Key 或 2
 返回扁平化兼容记录，例如 `cpu`、`ram`、`ram_total`、`net_in`、`net_out`、`net_total_up`、`net_total_down`。这与实时接口的嵌套结构不同。
 
 ::: tip 新开发建议
-48 小时、多节点或多指标查询优先使用 `public:queryMetrics`。它默认服务端降采样到约 500 点，避免旧接口重复解码并返回大量兼容记录。
+48 小时、多节点或多指标查询优先使用 `public:queryMetrics`。它默认降采样到约 500 点，更适合图表展示。
 :::
 
 ### 旧版 Ping 历史
@@ -416,7 +419,7 @@ ping.loss
 
 还支持按指标覆盖：`max_points_by_metric`、`server_downsample_by_metric`、`aggregation_by_metric`。响应 `series[]` 按指标、节点和标签拆分，包含 `metric_key`、`entity_id`、`unit`、`downsampled`、`interval_seconds`、`points[]`。
 
-不要在一次请求中省略 `entity_ids` 后同时查询大量指标和长时间范围；即使启用降采样，服务端仍需读取所有匹配序列。页面应按可见范围请求并缓存相同查询结果。
+不要在省略 `entity_ids` 的同时查询大量指标和长时间范围。页面应按可见节点和时间范围请求，并短时复用参数相同的结果。
 
 ## CORS 与来源
 

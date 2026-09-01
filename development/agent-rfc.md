@@ -3,7 +3,7 @@
 本页描述 Lite 服务端与 `nuomiiiii/Lite-agent` 当前实际使用的线协议，供第三方 Agent、采集器和兼容客户端开发。它不是对上游未来协议的承诺。
 
 ::: info Agent 口径
-本文以 Lite-agent `2.3.0.0` 为实现基线。Lite 继续保留上游兼容端点、消息和 `X-Komari-*` 请求头；这些名称属于线协议兼容层，不代表 Agent 仍从旧仓库发布或更新。
+本文以 Lite-agent `2.3.0.1` 为实现基线。Lite 继续保留上游兼容端点、消息和 `X-Komari-*` 请求头；这些名称属于线协议兼容层，不代表 Agent 仍从旧仓库发布或更新。
 :::
 
 ::: danger 安全边界
@@ -114,7 +114,7 @@ POST report 或 `agent.pull` 会刷新节点 fallback 在线状态；约 35 秒�
 | `agent.routeResult` | 回程路由结果 | 支持 | 支持 |
 | `agent.pull` | 拉取待下发事件 | 立即返回 | 最长等待约 25 秒 |
 
-`agent.taskResult` 虽然在共享常量中保留，但当前 v2 分发器没有接收实现。命令结果必须调用 `/api/clients/task/result`。`agent.event` 也不是当前 Agent 上行入口。
+服务端不接受 `agent.taskResult` 或 `agent.event` 作为 Agent 上行方法。命令结果必须调用 `/api/clients/task/result`。
 
 ### `agent.report`
 
@@ -333,7 +333,7 @@ GPU 明细：
 }
 ```
 
-POST 时服务端最多等待约 25 秒，有事件立即返回，无事件返回 `events: []`。当前实现使用 `ack_event_ids`；`capabilities` 和 `last_event_id` 已保留但暂不参与服务端筛选。
+POST 时服务端最多等待约 25 秒，有事件立即返回，无事件返回 `events: []`。Agent 应使用 `ack_event_ids` 确认事件；`capabilities` 和 `last_event_id` 是保留字段，当前不会改变返回结果。
 
 每个 Agent 只应保留一个活跃 pull，收到响应后立即发起下一次。report 与 pull 可并行。
 
@@ -364,9 +364,9 @@ POST fallback 返回的事件多一层队列元数据：
 }
 ```
 
-当前事件队列每个节点最多 128 条：普通事件保留 5 分钟，Ping 约 3 秒，回程路由约 2 分钟。Ping/路由同任务的新事件会合并旧事件。
+事件会过期，同一 Ping 或回程任务的新事件也可能替代尚未处理的旧事件。Agent 收到事件后应尽快处理，不应把服务端队列当作长期任务存储。
 
-fallback 采用至少一次投递语义。Agent 必须按事件 `id` 去重，处理成功后通过 `ack_event_ids` 确认。重复执行远程命令会产生实际副作用，因此幂等和 512 条左右的近期去重缓存是必要的。
+fallback 采用至少一次投递语义。Agent 必须按事件 `id` 去重，处理成功后通过 `ack_event_ids` 确认；远程命令等可能产生副作用的操作还应保证幂等。
 
 ### 远程执行
 
@@ -544,7 +544,7 @@ v1 没有回程路由协议，也没有与 v2 相同的可靠 fallback 事件队
 
 命令行、环境变量和 JSON 配置文件均可设置。优先级从低到高为：默认值、JSON 配置文件、环境变量、明确传入的命令行参数。没有显式传入的命令行参数不会用默认值覆盖其他配置来源；部署工具仍应避免在多个来源重复设置同一字段。
 
-## 实现检查清单
+## 接入检查清单
 
 1. 使用 Bearer Token，并同时支持 HTTPS/WSS。
 2. v2 请求严格使用 JSON-RPC `2.0`。
