@@ -24,19 +24,15 @@ Lite 同时保留兼容 HTTP API，并提供 JSON-RPC 2.0 入口。新主题和�
 | API Key | `Authorization: Bearer <api-key>` | 管理接口和 `admin:*` |
 | Agent | `Authorization: Bearer <client-token>` | `/api/clients/*`、`client:*`、Agent RFC |
 
-Agent Token 使用 `Authorization: Bearer <client-token>` 请求头。旧协议使用过的 URL 参数和 JSON body Token 不应继续使用。
-
-身份识别优先级为 API Key、管理员会话、Agent Token、匿名访客。API Key 与 Agent Token 都使用 Bearer 形式，服务端会先判断它是否为面板 API Key。
-
 ### 敏感操作与 2FA
 
-读取 Agent Token 等敏感管理操作在账号启用 2FA 时要求当前验证码。兼容调用支持：
+敏感管理操作的验证码支持以下传递方式：
 
 - `X-2FA-Code: 123456`
 - `X-Two-Factor-Code: 123456`
 - RPC `params` 中的 `2fa_code`、`two_factor_code` 或 `otp`
 
-远程终端和远程执行不使用上述共享验证状态。它们必须先通过 `/api/admin/client/remote/authorize` 重新验证当前 TOTP，未启用 2FA 时则重新输入管理员密码，再以页面专属授权创建会话或下发命令。API Key 不能签发或使用远程授权。
+远程终端和远程执行必须先通过 `/api/admin/client/remote/authorize` 重新验证当前 TOTP，未启用 2FA 时则重新输入管理员密码，再以页面专属授权创建会话或下发命令。API Key 不能签发或使用远程授权。
 
 不要把管理员 Cookie、API Key、密码、2FA 验证码或远程授权放进公开主题配置。
 
@@ -139,7 +135,9 @@ Agent Token 使用 `Authorization: Bearer <client-token>` 请求头。旧协议�
 
 `GET /api/nodes`
 
-返回可见节点数组。匿名访问会过滤隐藏节点，并固定清空 `token`、Agent `version`、私有 `remark`、`ipv4`、`ipv6`。
+返回可见节点数组。匿名访问会过滤隐藏节点；管理员会话或 API Key 可以看到隐藏节点。
+
+无论匿名访问、管理员已经登录还是使用 API Key，都会固定清空响应中的 Agent `version`、私有 `remark`、`ipv4`、`ipv6`，这些字段在 JSON 中直接省略。对应的 `public:getNodesInformation` 行为相同。
 
 稳定展示字段：
 
@@ -345,7 +343,7 @@ socket.addEventListener("message", (event) => {
 - `common:getNodesLatestStatus`
 - `common:getRecords`
 
-`common:getNodes` 返回独立的主题节点结构。它保留 UUID、名称、硬件、地区、公开备注、分组、标签、带宽、账单和生效流量额度等展示字段，但始终排除 Agent Token、Agent 版本、私有备注、部署状态、远程协议与远程控制状态、流量重置内部字段以及 `created_at`、`updated_at`。该规则对匿名和管理员调用都生效。
+`common:getNodes` 返回独立的主题节点结构。它保留 UUID、名称、硬件、地区、公开备注、分组、标签、带宽、账单和生效流量额度等展示字段，但始终排除 Agent 版本、私有备注、部署状态、远程协议与远程控制状态、流量重置内部字段以及 `created_at`、`updated_at`。该规则对匿名和管理员调用都生效。
 
 匿名调用仍会过滤隐藏节点，并按访客 IP 设置返回脱敏地址或不返回地址。`/api/nodes` 作为兼容 HTTP 接口维持原结构，调用方不要假设它与 `common:getNodes` 字段完全相同。
 

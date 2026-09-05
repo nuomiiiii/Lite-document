@@ -7,7 +7,7 @@
 :::
 
 ::: danger 安全边界
-Agent Token 等同于节点身份。不要写入日志、URL 分享、前端代码或公开配置。生产环境使用 HTTPS/WSS；只有隔离测试环境才可忽略证书校验。
+生产环境使用 HTTPS/WSS；只有隔离测试环境才可忽略证书校验。
 :::
 
 ## 协议概览
@@ -32,8 +32,6 @@ Lite-agent 的 `protocol_version` 必须为 `2`。服务端不接受 V1 Agent，
 Authorization: Bearer <client-token>
 ```
 
-Agent 认证只应使用 Bearer 请求头，不要把 Token 放进 URL、查询参数或 JSON body。
-
 主要端点：
 
 | 端点 | 方法 | 说明 |
@@ -55,7 +53,7 @@ CF-Access-Client-Id: <id>
 CF-Access-Client-Secret: <secret>
 ```
 
-这两项只负责通过 Cloudflare Access，不代替 Lite Agent Token。
+这两项用于通过 Cloudflare Access 的访问校验。
 
 ## v2 JSON-RPC
 
@@ -497,7 +495,7 @@ V1 上报、Ping 轮询、任务结果和旧终端通道已删除。当前版本
 
 ## 接入检查清单
 
-1. 使用 Bearer Token，并同时支持 HTTPS/WSS。
+1. 支持 HTTPS/WSS。
 2. v2 请求严格使用 JSON-RPC `2.0`。
 3. report 间隔保持在服务端读取超时以内。
 4. fallback 同时运行 report 和单一 pull 长轮询。

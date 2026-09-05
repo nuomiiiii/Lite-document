@@ -6,7 +6,7 @@
 
 ## 为什么换证书后 Agent 403？
 
-证书不会修改 Agent Token。更常见的是 Agent endpoint 改到了另一端口或实例、Token 与当前节点不匹配，或代理把请求送到错误后端。
+检查 Agent endpoint 是否改到了另一端口或实例，以及代理是否把请求送到错误后端。
 
 ## Agent 进程仍在运行，为什么面板显示离线？
 
@@ -64,4 +64,4 @@
 - 相关时间段的日志。
 - 可复现步骤与浏览器控制台错误。
 
-提交到 [nuomiiiii/lite Issues](https://github.com/nuomiiiii/lite/issues)。公开内容前先删除域名、IP、Token、Tunnel 凭据和备份文件。
+提交到 [nuomiiiii/lite Issues](https://github.com/nuomiiiii/lite/issues)。公开内容前先删除域名、IP、Tunnel 凭据和备份文件。

@@ -6,7 +6,7 @@
 
 ## 安装前确认
 
-单台服务器应先在 Lite 后台添加节点，再打开该节点的“节点配置”并切换到“部署指令”。选择目标系统和安装选项后，点击“保存并复制部署指令”，生成的命令已经包含面板地址、节点 Token 和所选安装参数。
+单台服务器应先在 Lite 后台添加节点，再打开该节点的“节点配置”并切换到“部署指令”。选择目标系统和安装选项后，点击“保存并复制部署指令”，在目标服务器上执行完整命令。
 
 Linux 安装脚本的默认值如下：
 
@@ -40,7 +40,7 @@ sudo bash install-lite-agent.sh \
 FreeBSD 请从 [Agent Releases](https://github.com/nuomiiiii/Lite-agent/releases) 下载对应架构的二进制，按 [JSON 配置](/remote/agent#json-配置)启动，并自行配置系统服务。当前脚本不会自动创建 FreeBSD 原生 rc.d 服务。
 
 ::: danger 保护节点凭据
-Agent Token、Cloudflare Access Service Token 和 `auto-discovery.json` 都属于敏感凭据。不要把完整安装命令、服务启动参数或日志原样贴到公开工单。
+Cloudflare Access Service Token 和 `auto-discovery.json` 都属于敏感凭据。不要把完整安装命令、服务启动参数或日志原样贴到公开工单。
 :::
 
 ### Docker
@@ -81,7 +81,7 @@ sudo systemctl is-active lite-agent
 sudo systemctl status lite-agent --no-pager -l
 ```
 
-正常情况下，服务应同时显示 `enabled` 和 `active`。状态页中的启动命令还能帮助确认面板地址、安装路径和是否使用了自定义参数；对外分享前请遮盖 Token。
+正常情况下，服务应同时显示 `enabled` 和 `active`。状态页中的启动命令还能帮助确认面板地址、安装路径和是否使用了自定义参数。
 
 ### Docker
 
@@ -187,14 +187,14 @@ tail -n 100 /var/log/lite-agent.log
 Windows 安装脚本默认不会创建独立的 Agent 文本日志。先用 `Get-Service` 和 Lite 后台的最后上报时间判断状态；服务启动失败时，再查看“事件查看器 → Windows 日志 → 应用程序”中的 NSSM 或服务错误。
 
 ::: warning 分享日志前先脱敏
-删除面板域名、IP、Agent Token、自动发现密钥、Cloudflare Access 凭据和完整启动参数。不要为了排查而关闭 TLS 校验或把 Token 改回 URL 参数。
+删除面板域名、IP、自动发现密钥、Cloudflare Access 凭据和完整启动参数。不要为了排查而关闭 TLS 校验。
 :::
 
 ## 根据日志排查
 
 | 现象 | 优先检查 |
 | --- | --- |
-| `401` 或 `403` | 面板地址是否指向正确实例、Token 是否与当前节点匹配、Cloudflare Access 凭据是否成对配置 |
+| `401` 或 `403` | 面板地址是否指向正确实例、Cloudflare Access 凭据是否成对配置 |
 | 证书或 `x509` 错误 | 域名是否匹配证书、证书链是否完整、服务器时间是否正确 |
 | `connection refused` | 面板端口是否监听、防火墙和反向代理是否指向正确端口 |
 | DNS 或超时 | Agent 所在节点能否解析并访问面板域名，自定义 DNS 和 IPv4/IPv6 偏好是否合适 |
@@ -252,7 +252,7 @@ launchctl kickstart -k "gui/$(id -u)/com.lite.lite-agent"
 
 ### 一键完全卸载（默认 systemd 安装）
 
-确认不再需要恢复节点身份后，可复制并执行下面这一条命令。它会停止并删除默认的 `lite-agent` 服务，同时永久删除 `/opt/lite-agent` 中的程序、Agent Token、自动发现凭据和本地流量状态：
+确认不再需要恢复节点身份后，可复制并执行下面这一条命令。它会停止并删除默认的 `lite-agent` 服务，同时永久删除 `/opt/lite-agent` 中的程序、自动发现凭据和本地流量状态：
 
 ```bash
 sudo sh -eu -c 'if [ "$(systemctl show -p LoadState --value lite-agent.service)" != "not-found" ]; then systemctl disable --now lite-agent.service; fi; rm -f /etc/systemd/system/lite-agent.service; systemctl daemon-reload; systemctl reset-failed lite-agent.service 2>/dev/null || true; rm -rf -- /opt/lite-agent'

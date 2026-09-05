@@ -6,9 +6,9 @@ Agent 负责采集服务器状态、执行探测并在管理员授权后提供�
 本页使用 Lite 配套的 [`nuomiiiii/Lite-agent`](https://github.com/nuomiiiii/Lite-agent)。它有独立仓库、`Lite-agent-*` 二进制、Docker 镜像和自动更新源；协议细节见 [Agent RFC](/development/agent-rfc)。
 :::
 
-接入单台服务器时，先在 Lite 后台添加节点，再打开该节点的“节点配置”，切换到“部署指令”，选择平台和安装选项后复制完整命令到目标服务器执行。部署指令已经包含面板地址和节点凭据，不需要自行拼接 Endpoint 或 Token。
+接入单台服务器时，先在 Lite 后台添加节点，再打开该节点的“节点配置”，切换到“部署指令”，选择平台和安装选项后复制完整命令到目标服务器执行。
 
-需要批量接入服务器时，请使用 [Agent 自动发现](/install/agent-ad)。自动发现会为每台 Agent 单独签发并保存节点凭据，不需要逐台创建节点和复制 Token。
+需要批量接入服务器时，请使用 [Agent 自动发现](/install/agent-ad)，无需逐台创建节点。
 
 安装、服务状态、日志、更新、重启和卸载命令统一见 [Agent 安装与维护](/install/agent)。
 
@@ -66,7 +66,7 @@ Agent 会上报当前生效配置。Lite 仅使用上报内容初始化尚未保
 
 ## 从旧 Agent 迁移
 
-当前 Lite-agent 安装脚本会识别旧 `komari-agent` 服务和目录，迁移节点身份、自动发现凭据、流量状态、配置和远程控制状态，并在新服务确认运行后退役旧服务。旧配置中的 `disable_web_ssh` 会自动转换为 `remote_control_enabled`；新配置只应使用正向开关。迁移前仍应记录原安装参数并备份 Agent 目录；不要手工同时运行新旧 Agent 使用同一个节点 Token。
+当前 Lite-agent 安装脚本会识别旧 `komari-agent` 服务和目录，迁移节点身份、自动发现凭据、流量状态、配置和远程控制状态，并在新服务确认运行后退役旧服务。旧配置中的 `disable_web_ssh` 会自动转换为 `remote_control_enabled`；新配置只应使用正向开关。迁移前仍应记录原安装参数并备份 Agent 目录。
 
 ## 远程执行去重
 
@@ -92,8 +92,6 @@ Agent 支持 Service Token：
 
 这两个值必须成对配置。不要把它们放进公开仓库或可被普通用户读取的进程日志。
 
-## 凭据失败
-
-日志中的 Agent `403` 通常表示 UUID/Token 不匹配、Agent 使用了错误的 Token，或代理没有把请求送到正确实例。更换 HTTPS 证书本身不会改变 Agent Token。
+## 连接故障
 
 遇到证书、DNS、连接超时、反复重启或进程运行但节点离线时，按 [Agent 日志排查](/install/agent#根据日志排查) 的顺序检查。
