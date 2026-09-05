@@ -135,9 +135,7 @@ Lite 同时保留兼容 HTTP API，并提供 JSON-RPC 2.0 入口。新主题和�
 
 `GET /api/nodes`
 
-返回可见节点数组。匿名访问会过滤隐藏节点；管理员会话或 API Key 可以看到隐藏节点。
-
-无论匿名访问、管理员已经登录还是使用 API Key，都会固定清空响应中的 Agent `version`、私有 `remark`、`ipv4`、`ipv6`，这些字段在 JSON 中直接省略。对应的 `public:getNodesInformation` 行为相同。
+返回可见节点数组。匿名访问会过滤隐藏节点，并固定清空 Agent `version`、私有 `remark`、`ipv4`、`ipv6`。
 
 稳定展示字段：
 
