@@ -109,6 +109,36 @@ body {
   overflow-wrap: anywhere;
 }
 
+.vp-doc :not(pre) > code {
+  vertical-align: 1.5px;
+}
+
+.vp-doc a:has(> code) {
+  text-decoration: none;
+}
+
+.vp-doc [class*='language-'] pre {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.vp-doc [class*='language-'] > button.copy {
+  top: 4px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  background-size: 18px;
+}
+
+.vp-doc [class*='language-'] > button.copy.copied::before,
+.vp-doc [class*='language-'] > button.copy:hover.copied::before {
+  height: 36px;
+}
+
+.vp-doc .line-numbers-wrapper {
+  padding-top: 10px;
+}
+
 @media (max-width: 640px) {
   .VPHero .text {
     font-size: 32px;

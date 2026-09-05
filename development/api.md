@@ -1,6 +1,6 @@
 # API 与 RPC2
 
-Lite 同时保留兼容 HTTP API，并提供 JSON-RPC 2.0 入口。新主题和新集成优先使用 RPC2；旧 HTTP 路由主要用于兼容现有主题、脚本和 Agent。
+Lite 同时保留兼容 HTTP API，并提供 JSON-RPC 2.0 入口。新主题和新集成优先使用 RPC2；旧 HTTP 路由主要用于兼容现有主题和脚本。Agent 只使用 [Agent RFC](/development/agent-rfc) 中的协议 2 端点。
 
 ::: warning 版本口径
 本页只记录 `nuomiiiii/lite` 当前实际提供的接口。标为兼容的旧 HTTP 接口与上游对应接口保持相同调用方式；Lite 新增字段、RPC2 方法或明确差异会直接注明。未收录的上游接口不代表 Lite 支持，不要根据数据库表、后台页面请求或上游插件接口推断兼容范围。
@@ -24,19 +24,21 @@ Lite 同时保留兼容 HTTP API，并提供 JSON-RPC 2.0 入口。新主题和�
 | API Key | `Authorization: Bearer <api-key>` | 管理接口和 `admin:*` |
 | Agent | `Authorization: Bearer <client-token>` | `/api/clients/*`、`client:*`、Agent RFC |
 
-Agent Token 也兼容 `?token=`、`?Authorization=` 和部分 JSON body 中的 `token`，但 URL 中的 Token 可能进入代理日志、浏览器历史和监控记录。新接入应使用 `Authorization` 请求头。
+Agent Token 使用 `Authorization: Bearer <client-token>` 请求头。旧协议使用过的 URL 参数和 JSON body Token 不应继续使用。
 
 身份识别优先级为 API Key、管理员会话、Agent Token、匿名访客。API Key 与 Agent Token 都使用 Bearer 形式，服务端会先判断它是否为面板 API Key。
 
 ### 敏感操作与 2FA
 
-远程执行、Token 轮换、终端等敏感操作可能要求二次验证。支持：
+读取 Agent Token 等敏感管理操作在账号启用 2FA 时要求当前验证码。兼容调用支持：
 
 - `X-2FA-Code: 123456`
 - `X-Two-Factor-Code: 123456`
 - RPC `params` 中的 `2fa_code`、`two_factor_code` 或 `otp`
 
-API Key 调用不再重复要求 2FA。不要把管理员 Cookie、API Key 或 2FA 验证码放进公开主题配置。
+远程终端和远程执行不使用上述共享验证状态。它们必须先通过 `/api/admin/client/remote/authorize` 重新验证当前 TOTP，未启用 2FA 时则重新输入管理员密码，再以页面专属授权创建会话或下发命令。API Key 不能签发或使用远程授权。
+
+不要把管理员 Cookie、API Key、密码、2FA 验证码或远程授权放进公开主题配置。
 
 ## HTTP 响应
 
@@ -124,7 +126,7 @@ API Key 调用不再重复要求 2FA。不要把管理员 Cookie、API Key 或 2
   "status": "success",
   "message": "",
   "data": {
-    "version": "2.3.1",
+    "version": "2.3.2",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }
@@ -174,7 +176,6 @@ API Key 调用不再重复要求 2FA。不要把管理员 Cookie、API Key 或 2
 | `effective_traffic_limit` | number | 当前周期生效额度 |
 | `effective_traffic_type` | string | 当前周期生效统计方式 |
 | `traffic_reset_day` | number | 服务端流量重置日，缺失表示跟随 Agent |
-| `remote_control_protected` | boolean | Agent 是否因安全策略阻止远程控制 |
 | `created_at` | string | 创建时间 |
 | `updated_at` | string | 更新时间 |
 
@@ -284,7 +285,7 @@ socket.addEventListener("message", (event) => {
   "jsonrpc": "2.0",
   "id": "version-1",
   "result": {
-    "version": "2.3.1",
+    "version": "2.3.2",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }
@@ -325,7 +326,6 @@ socket.addEventListener("message", (event) => {
 | --- | --- | --- |
 | `public:*` | 访客 | 站点、历史、指标和访客事件 |
 | `common:*` | 访客 | 主题常用节点与记录接口 |
-| `client:*` | Agent | Ping 任务、Ping 结果、命令结果 |
 | `admin:*` | 管理员/API Key | 后台管理与敏感操作 |
 
 稳定公共方法：
@@ -345,9 +345,13 @@ socket.addEventListener("message", (event) => {
 - `common:getNodesLatestStatus`
 - `common:getRecords`
 
+`common:getNodes` 返回独立的主题节点结构。它保留 UUID、名称、硬件、地区、公开备注、分组、标签、带宽、账单和生效流量额度等展示字段，但始终排除 Agent Token、Agent 版本、私有备注、部署状态、远程协议与远程控制状态、流量重置内部字段以及 `created_at`、`updated_at`。该规则对匿名和管理员调用都生效。
+
+匿名调用仍会过滤隐藏节点，并按访客 IP 设置返回脱敏地址或不返回地址。`/api/nodes` 作为兼容 HTTP 接口维持原结构，调用方不要假设它与 `common:getNodes` 字段完全相同。
+
 `admin:*` 方法会随后台能力演进。外部自动化应只调用经过验证的具体方法，并固定兼容版本，不要把后台路由列表当作永久稳定 SDK。
 
-账单中心管理方法包括 `admin:getBillingOverview`、`admin:getBillingServers`、`admin:getBillingMonthly`、`admin:getBillingYearly`、`admin:getBillingEntries`、`admin:createBillingTrafficReset`、`admin:createBillingIPChange`、`admin:createBillingOneTimeFee` 和 `admin:voidBillingEntry`。这些方法需要管理员权限，属于随后台演进的管理接口，不是匿名主题 API。
+成本中心管理方法包括 `admin:getBillingOverview`、`admin:getBillingServers`、`admin:getBillingMonthly`、`admin:getBillingYearly`、`admin:getBillingEntries`、`admin:createBillingTrafficReset`、`admin:createBillingIPChange`、`admin:createBillingOneTimeFee` 和 `admin:voidBillingEntry`。这些方法需要管理员权限，属于随后台演进的管理接口，不是匿名主题 API。
 
 ## 指标查询
 

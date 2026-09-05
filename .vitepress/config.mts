@@ -33,7 +33,7 @@ const sidebar = [
     items: [
       { text: "仪表盘", link: "/admin/dashboard" },
       { text: "服务器管理", link: "/admin/servers" },
-      { text: "账单中心", link: "/admin/billing" },
+      { text: "成本中心", link: "/admin/billing" },
       { text: "监测与回程", link: "/admin/monitoring" },
       { text: "流量与报告", link: "/admin/traffic" },
       { text: "通知与告警", link: "/admin/notifications" },
@@ -49,6 +49,7 @@ const sidebar = [
   {
     text: "访问与安全",
     items: [
+      { text: "账号、2FA 与登录会话", link: "/security/account" },
       { text: "内置 HTTPS", link: "/security/https" },
       { text: "反向代理与 Tunnel", link: "/security/reverse-proxy" },
     ],
@@ -99,6 +100,8 @@ export default defineConfig({
     ],
     sidebar,
     outline: { label: "本页目录", level: [2, 3] },
+    sidebarMenuLabel: "目录",
+    returnToTopLabel: "回到顶部",
     docFooter: { prev: "上一页", next: "下一页" },
     lastUpdated: { text: "最后更新" },
     search: {

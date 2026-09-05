@@ -46,7 +46,8 @@ wget -qO- 'https://raw.githubusercontent.com/nuomiiiii/Lite-agent/refs/heads/mai
 ### macOS
 
 ```bash
-zsh <(curl -sL 'https://raw.githubusercontent.com/nuomiiiii/Lite-agent/refs/heads/main/install.sh') --endpoint 'https://lite.example.com' --auto-discovery 'YOUR_AD_KEY'
+curl -fsSL 'https://raw.githubusercontent.com/nuomiiiii/Lite-agent/refs/heads/main/install.sh' -o install-lite-agent.sh
+bash install-lite-agent.sh --endpoint 'https://lite.example.com' --auto-discovery 'YOUR_AD_KEY'
 ```
 
 ### Windows
@@ -62,17 +63,17 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "iwr 'https://raw.git
 ```bash
 touch .lite-auto-discovery.json && \
 docker run -d --name lite-agent --restart=always \
-  -v .lite-auto-discovery.json:/app/auto-discovery.json \
-  ghcr.io/nuomiiiii/Lite-agent:latest \
+  -v "$(pwd)/.lite-auto-discovery.json:/app/auto-discovery.json" \
+  ghcr.io/nuomiiiii/lite-agent:latest \
   --endpoint 'https://lite.example.com' \
   --auto-discovery 'YOUR_AD_KEY'
 ```
 
-`touch` 不能省略。绑定单个文件前必须先创建宿主机文件，否则 Docker 可能把它创建成目录，Agent 将无法保存凭据。
+以上命令适用于 Linux 或 macOS Shell。`touch` 不能省略：绑定单个文件前必须先创建宿主机文件，否则 Docker 可能把它创建成目录，Agent 将无法保存凭据。`-v` 左侧使用 `$(pwd)` 展开后的绝对路径，不要改为只有文件名的 `.lite-auto-discovery.json`，以免被 Docker 当成命名卷。镜像地址中的 `lite-agent` 必须为小写。
 
 每个容器必须使用各自独立的 `auto-discovery.json`。不要把同一份文件挂载给多个 Agent，否则它们会复用同一个节点身份。
 
-Docker Agent 不会在容器内替换自身二进制。升级时请拉取新的 `ghcr.io/nuomiiiii/Lite-agent` 镜像并重建容器，同时保留上述凭据文件。
+Docker Agent 不会在容器内替换自身二进制。升级时请拉取新的 `ghcr.io/nuomiiiii/lite-agent` 镜像并重建容器，同时保留上述凭据文件。
 
 ## 常用安装选项
 
@@ -80,7 +81,7 @@ Docker Agent 不会在容器内替换自身二进制。升级时请拉取新的 
 
 | 参数 | 作用 | 说明 |
 | --- | --- | --- |
-| `--disable-web-ssh` | 禁用远程控制 | 同时关闭远程终端及远程执行能力 |
+| `--enable-remote-control` | 启用远程控制 | 新安装默认关闭；同时需要站点开启远程管理后才会生效，且不能通过后台远程打开 |
 | `--disable-auto-update` | 禁用 Agent 自动更新 | Docker 部署应通过更新镜像升级 |
 | `--ignore-unsafe-cert` | 忽略证书错误 | 仅用于受控测试环境，生产环境不建议使用 |
 | `--memory-include-cache` | 调整内存统计口径 | 将缓存和缓冲区计入内存使用量 |

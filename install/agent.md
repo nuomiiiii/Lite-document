@@ -1,12 +1,12 @@
 # Agent 安装与维护
 
-请使用[版本与功能范围](/guide/versioning)中列出的配套 Lite-agent。Agent 使用独立更新源和 Lite 安装目录，并通过 WebSocket 心跳、读超时和快速重连降低进程运行但面板显示离线的概率。
+当前已发布版本为 Lite-agent `2.3.1.0`。请配合 Lite `2.3.1` 或更高版本使用；Lite `2.3.2` 发布后建议升级到该版本组合。Agent 使用独立更新源和 Lite 安装目录，并通过 WebSocket 心跳、读超时和快速重连降低进程运行但面板显示离线的概率。
 
-本页覆盖 Agent 的安装、状态检查、日志、重启、更新和卸载。连接参数与在线配置见 [Agent 接入与配置](/remote/agent)，批量部署见 [Agent 自动发现](/install/agent-ad)。
+本页覆盖 Agent 的安装、状态检查、日志、重启、更新和卸载。节点配置与在线下发见 [Agent 接入与配置](/remote/agent)，批量部署见 [Agent 自动发现](/install/agent-ad)。
 
 ## 安装前确认
 
-优先在 Lite 后台的“添加服务器”或 Agent 部署配置中生成命令。生成的命令已经包含面板地址、节点 Token 和所选安装参数，能减少手工拼写错误。
+单台服务器应先在 Lite 后台添加节点，再打开该节点的“节点配置”并切换到“部署指令”。选择目标系统和安装选项后，点击“保存并复制部署指令”，生成的命令已经包含面板地址、节点 Token 和所选安装参数。
 
 Linux 安装脚本的默认值如下：
 
@@ -21,7 +21,7 @@ Linux 安装脚本的默认值如下：
 
 ## 安装 Agent
 
-### Linux、macOS 和 FreeBSD
+### Linux 和 macOS
 
 推荐直接执行后台生成的命令。需要手工安装时，可下载脚本后运行：
 
@@ -29,10 +29,15 @@ Linux 安装脚本的默认值如下：
 curl -fsSL https://raw.githubusercontent.com/nuomiiiii/Lite-agent/main/install.sh -o install-lite-agent.sh
 sudo bash install-lite-agent.sh \
   --endpoint "https://example.com" \
-  --token "你的-Agent-Token"
+  --token "你的-Agent-Token" \
+  --enable-remote-control=false
 ```
 
-安装脚本会识别 systemd、OpenRC、OpenWrt procd、macOS launchd 或 Upstart，并创建对应服务。脚本再次运行时会替换原服务和程序，适合更新或修改必须重装才能生效的安装参数。
+安装脚本会识别 systemd、OpenRC、OpenWrt procd、macOS launchd 或 Upstart，并创建对应服务。新安装默认关闭远程控制；需要使用远程终端、文件管理或远程执行时，将最后一项改为 `--enable-remote-control`，并同时在 Lite 后台开启“允许远程管理”。
+
+脚本再次运行时会替换原服务和程序，适合更新或修改必须重装才能生效的安装参数。从旧 `komari-agent` 安装迁移时，会保留可识别的节点身份、自动发现凭据、流量状态、配置和原有远程控制状态。
+
+FreeBSD 请从 [Agent Releases](https://github.com/nuomiiiii/Lite-agent/releases) 下载对应架构的二进制，按 [JSON 配置](/remote/agent#json-配置)启动，并自行配置系统服务。当前脚本不会自动创建 FreeBSD 原生 rc.d 服务。
 
 ::: danger 保护节点凭据
 Agent Token、Cloudflare Access Service Token 和 `auto-discovery.json` 都属于敏感凭据。不要把完整安装命令、服务启动参数或日志原样贴到公开工单。
@@ -43,10 +48,18 @@ Agent Token、Cloudflare Access Service Token 和 `auto-discovery.json` 都属�
 Docker 用户应优先使用后台生成的 `docker run` 或 Compose 配置。默认拉取 `latest`：
 
 ```bash
-docker pull ghcr.io/nuomiiiii/Lite-agent:latest
+docker pull ghcr.io/nuomiiiii/lite-agent:latest
 ```
 
-自动发现部署必须把 `/app/auto-discovery.json` 持久化到宿主机，并确保每个容器使用独立文件。Docker Agent 不会在容器内替换自身程序，更新时必须拉取新镜像并重建容器。
+需要固定当前正式版时使用：
+
+```bash
+docker pull ghcr.io/nuomiiiii/lite-agent:2.3.1.0
+```
+
+镜像地址必须使用小写 `lite-agent`；如果后台生成的命令中仍是 `Lite-agent`，请先改为上述小写地址，否则 Docker 会拒绝执行。
+
+自动发现部署必须把 `/app/auto-discovery.json` 持久化到宿主机，并确保每个容器使用独立文件，完整示例见 [Agent 自动发现](/install/agent-ad#docker)。Docker Agent 不会在容器内替换自身程序，更新时必须拉取新镜像并重建容器。
 
 ### Windows
 
@@ -181,7 +194,7 @@ Windows 安装脚本默认不会创建独立的 Agent 文本日志。先用 `Get
 
 | 现象 | 优先检查 |
 | --- | --- |
-| `401` 或 `403` | 面板地址是否指向正确实例、Token 是否已轮换、Cloudflare Access 凭据是否成对配置 |
+| `401` 或 `403` | 面板地址是否指向正确实例、Token 是否与当前节点匹配、Cloudflare Access 凭据是否成对配置 |
 | 证书或 `x509` 错误 | 域名是否匹配证书、证书链是否完整、服务器时间是否正确 |
 | `connection refused` | 面板端口是否监听、防火墙和反向代理是否指向正确端口 |
 | DNS 或超时 | Agent 所在节点能否解析并访问面板域名，自定义 DNS 和 IPv4/IPv6 偏好是否合适 |
@@ -201,12 +214,12 @@ sudo systemctl restart lite-agent
 sudo systemctl status lite-agent --no-pager -l
 ```
 
-更新可在 Lite 后台发起，也可以重新执行当前节点的完整安装命令。重新运行脚本会替换程序和服务配置，但不会主动删除安装目录中的 `auto-discovery.json`、`net_static.json` 等数据文件。
+更新可在 Lite 后台发起，也可以重新执行当前节点的完整安装命令。重新运行脚本会替换程序和服务配置，但不会主动删除安装目录中的 `auto-discovery.json`、`net_static.json` 等数据文件，也会保留升级前的远程控制状态。新安装默认关闭远程控制，不代表已有节点升级后会被自动关闭。
 
 ### Docker
 
 ```bash
-docker pull ghcr.io/nuomiiiii/Lite-agent:latest
+docker pull ghcr.io/nuomiiiii/lite-agent:latest
 ```
 
 拉取后使用原来的参数、卷挂载和重启策略重建容器。不要为了更新而删除持久化的 `auto-discovery.json`。

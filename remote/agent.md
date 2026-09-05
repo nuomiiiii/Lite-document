@@ -6,27 +6,13 @@ Agent 负责采集服务器状态、执行探测并在管理员授权后提供�
 本页使用 Lite 配套的 [`nuomiiiii/Lite-agent`](https://github.com/nuomiiiii/Lite-agent)。它有独立仓库、`Lite-agent-*` 二进制、Docker 镜像和自动更新源；协议细节见 [Agent RFC](/development/agent-rfc)。
 :::
 
+接入单台服务器时，先在 Lite 后台添加节点，再打开该节点的“节点配置”，切换到“部署指令”，选择平台和安装选项后复制完整命令到目标服务器执行。部署指令已经包含面板地址和节点凭据，不需要自行拼接 Endpoint 或 Token。
+
 需要批量接入服务器时，请使用 [Agent 自动发现](/install/agent-ad)。自动发现会为每台 Agent 单独签发并保存节点凭据，不需要逐台创建节点和复制 Token。
 
 安装、服务状态、日志、更新、重启和卸载命令统一见 [Agent 安装与维护](/install/agent)。
 
-请使用[版本与功能范围](/guide/versioning)中列出的配套 Lite-agent。旧 Agent 可继续基础上报，但当前配套版本提供独立更新源、Lite 安装目录迁移、WebSocket 心跳与读超时，以及更稳定的断线重连。
-
-## 最小配置
-
-```bash
-./Lite-agent \
-  --endpoint "https://example.com" \
-  --token "你的-Agent-Token"
-```
-
-也可以使用环境变量：
-
-```bash
-export AGENT_ENDPOINT="https://example.com"
-export AGENT_TOKEN="你的-Agent-Token"
-./Lite-agent
-```
+请使用[版本与功能范围](/guide/versioning)中列出的配套 Lite-agent。Lite-agent `2.3.1.0` 仅使用协议 2，并提供远程控制正向开关、远程执行去重、Lite 安装目录迁移和断线重连。只支持旧协议的 Agent 无法继续接入，应先升级。
 
 ## JSON 配置
 
@@ -36,7 +22,7 @@ export AGENT_TOKEN="你的-Agent-Token"
   "token": "your-token",
   "interval": 3,
   "disable_auto_update": false,
-  "disable_web_ssh": false,
+  "remote_control_enabled": false,
   "ignore_unsafe_cert": false
 }
 ```
@@ -54,7 +40,7 @@ export AGENT_TOKEN="你的-Agent-Token"
 | `--interval` | 服务器状态采集间隔，单位秒 |
 | `--include-nics` / `--exclude-nics` | 限定参与流量统计的网卡 |
 | `--include-mountpoint` | 限定参与统计的挂载点 |
-| `--disable-web-ssh` | 禁用远程终端与相关远程控制 |
+| `--enable-remote-control` | 启用远程终端、文件和命令；新安装默认关闭 |
 | `--prefer-ip-version` | 优先使用 IPv4 或 IPv6 |
 | `--custom-dns` | 指定 Agent 使用的 DNS |
 | `--ignore-unsafe-cert` | 忽略证书错误，仅用于受控测试环境 |
@@ -74,13 +60,19 @@ export AGENT_TOKEN="你的-Agent-Token"
 
 ### 不能在线下发的选项
 
-禁用远程控制、忽略不安全证书、禁用自动更新、从网卡获取 IP 地址、GitHub 代理、安装目录和服务名只会保存到安装配置，用于下次生成重装指令。它们不会进入在线下发内容，必须手动重新安装 Agent 才能改变。
+启用远程控制、忽略不安全证书、禁用自动更新、从网卡获取 IP 地址、GitHub 代理、安装目录和服务名只会保存到安装配置，用于生成新的部署指令。它们不会进入在线下发内容，需要在节点本地更新启动参数并重启或重新安装 Agent 才能改变。
 
 Agent 会上报当前生效配置。Lite 仅使用上报内容初始化尚未保存过配置的节点，不会用旧 Agent 状态覆盖管理员已保存的内容。
 
 ## 从旧 Agent 迁移
 
-当前 Lite-agent 安装脚本会识别旧 `komari-agent` 服务和目录，复制自动发现及流量侧车文件，并在新服务确认运行后退役旧服务。迁移前仍应记录原安装参数并备份 Agent 目录；不要手工同时运行新旧 Agent 使用同一个节点 Token。
+当前 Lite-agent 安装脚本会识别旧 `komari-agent` 服务和目录，迁移节点身份、自动发现凭据、流量状态、配置和远程控制状态，并在新服务确认运行后退役旧服务。旧配置中的 `disable_web_ssh` 会自动转换为 `remote_control_enabled`；新配置只应使用正向开关。迁移前仍应记录原安装参数并备份 Agent 目录；不要手工同时运行新旧 Agent 使用同一个节点 Token。
+
+## 远程执行去重
+
+Lite-agent `2.3.1.0` 会在本地记录最近 24 小时、最多 256 条远程执行任务状态。通过 WebSocket 直接下发和断线后的排队投递使用同一套检查，同一个 `task_id` 不会重复执行。
+
+如果 Agent 在命令执行期间崩溃或被强制结束，重启后会向 Lite 报告“执行状态未知”，不会自行重新运行该命令。这里的 256 指任务记录条数，不是磁盘容量。
 
 ## 流量重置日
 
@@ -102,6 +94,6 @@ Agent 支持 Service Token：
 
 ## 凭据失败
 
-日志中的 Agent `403` 通常表示 UUID/Token 不匹配、旧 Agent 仍在使用已轮换 Token，或代理没有把请求送到正确实例。更换 HTTPS 证书本身不会改变 Agent Token。
+日志中的 Agent `403` 通常表示 UUID/Token 不匹配、Agent 使用了错误的 Token，或代理没有把请求送到正确实例。更换 HTTPS 证书本身不会改变 Agent Token。
 
 遇到证书、DNS、连接超时、反复重启或进程运行但节点离线时，按 [Agent 日志排查](/install/agent#根据日志排查) 的顺序检查。

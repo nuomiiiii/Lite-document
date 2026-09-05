@@ -1,9 +1,9 @@
 # Agent RFC
 
-本页描述 Lite 服务端与 `nuomiiiii/Lite-agent` 当前实际使用的线协议，供第三方 Agent、采集器和兼容客户端开发。它不是对上游未来协议的承诺。
+本页描述 Lite 服务端与 `nuomiiiii/Lite-agent` 当前实际使用的线协议，供第三方 Agent 和采集器开发。它不是对上游协议的兼容承诺。
 
 ::: info Agent 口径
-本文以 Lite-agent `2.3.0.2` 为实现基线。Lite 继续保留上游兼容端点、消息和 `X-Komari-*` 请求头；这些名称属于线协议兼容层，不代表 Agent 仍从旧仓库发布或更新。
+本文以即将发布的 Lite `2.3.2` 和已发布的 Lite-agent `2.3.1.0` 为实现基线。当前只支持协议 2，不保留 V1 端点、旧远程终端消息或自动降级。
 :::
 
 ::: danger 安全边界
@@ -12,17 +12,17 @@ Agent Token 等同于节点身份。不要写入日志、URL 分享、前端代�
 
 ## 协议概览
 
-| 能力 | v1 | v2 |
-| --- | --- | --- |
-| 实时 report | 原始 JSON WebSocket/POST | JSON-RPC 2.0 WebSocket/POST |
-| 基础信息 | 独立 HTTP POST | `agent.basicInfo` |
-| 下发任务 | WebSocket 兼容消息 | JSON-RPC 事件 |
-| WebSocket 不可用 | 只能使用分散 HTTP 接口 | POST report + `agent.pull` 长轮询 |
-| 压缩 | 无协议级要求 | gzip POST、permessage-deflate WebSocket |
-| 回程路由 | 不支持 | `agent.route` / `agent.routeResult` |
-| 推荐用途 | 旧 Agent 兼容 | 新 Agent 默认协议 |
+| 能力 | 当前行为 |
+| --- | --- |
+| 实时 report | JSON-RPC 2.0 WebSocket/POST |
+| 基础信息 | `agent.basicInfo` |
+| 下发任务 | JSON-RPC 2.0 事件 |
+| WebSocket 不可用 | POST report + `agent.pull` 长轮询 |
+| 压缩 | gzip POST、permessage-deflate WebSocket |
+| 回程路由 | `agent.route` / `agent.routeResult` |
+| 远程终端与文件 | `agent.remote.request` + 独立 `/api/clients/remote` WebSocket |
 
-Lite 当前配套 Agent 默认 `--protocol-version=2`，与上游官方 Agent 一致。连续 3 次确认属于 v2 协议或 HTTP 状态错误后，会在当前连接周期回退到 v1。
+Lite-agent 的 `protocol_version` 必须为 `2`。服务端不接受 V1 Agent，Agent 也不会回退到 V1。
 
 ## 认证与端点
 
@@ -32,7 +32,7 @@ Lite 当前配套 Agent 默认 `--protocol-version=2`，与上游官方 Agent �
 Authorization: Bearer <client-token>
 ```
 
-兼容查询参数：`?token=<client-token>`。新 Agent 不应使用查询参数传递 Token。
+Agent 认证只应使用 Bearer 请求头，不要把 Token 放进 URL、查询参数或 JSON body。
 
 主要端点：
 
@@ -40,23 +40,22 @@ Authorization: Bearer <client-token>
 | --- | --- | --- |
 | `/api/clients/v2/rpc` | WebSocket GET | v2 双向主通道 |
 | `/api/clients/v2/rpc` | POST | v2 上报与 fallback 长轮询 |
-| `/api/clients/report` | WebSocket GET | v1 实时上报与事件 |
-| `/api/clients/report` | POST | v1 report fallback |
-| `/api/clients/uploadBasicInfo` | POST | v1 基础信息 |
-| `/api/clients/task/result` | POST | 远程执行结果，v1/v2 Agent 共用 |
-| `/api/clients/ping/tasks` | GET | v1 拉取 Ping 任务 |
-| `/api/clients/ping/result` | POST | v1 上传 Ping 结果 |
-| `/api/clients/terminal` | WebSocket GET | 独立旧终端数据通道 |
+| `/api/clients/report` | 已删除 | 旧 V1 上报，当前版本不可用 |
+| `/api/clients/uploadBasicInfo` | 已删除 | 旧 V1 基础信息，当前版本不可用 |
+| `/api/clients/task/result` | 已删除 | 旧 V1 任务结果，当前版本不可用 |
+| `/api/clients/ping/tasks` | 已删除 | 旧 V1 Ping 拉取，当前版本不可用 |
+| `/api/clients/ping/result` | 已删除 | 旧 V1 Ping 结果，当前版本不可用 |
+| `/api/clients/terminal` | 已删除 | 旧终端通道，当前版本不可用 |
 | `/api/clients/remote` | WebSocket GET | 远程终端与文件会话通道 |
 
-Lite 配套 Agent 与上游官方 Agent 一样，还可同时发送 Cloudflare Access Service Token：
+Lite 配套 Agent 还可同时发送 Cloudflare Access Service Token：
 
 ```http
 CF-Access-Client-Id: <id>
 CF-Access-Client-Secret: <secret>
 ```
 
-这两项只负责通过 Cloudflare Access，不代替 Komari Agent Token。
+这两项只负责通过 Cloudflare Access，不代替 Lite Agent Token。
 
 ## v2 JSON-RPC
 
@@ -88,7 +87,7 @@ Content-Encoding: gzip
 
 ## 连接状态机
 
-Lite 配套 Agent 与上游官方 Agent 一致的实际连接流程：
+Lite 配套 Agent 的实际连接流程：
 
 1. 启动后先上传基础信息。
 2. 连接 `/api/clients/v2/rpc` WebSocket。
@@ -96,7 +95,6 @@ Lite 配套 Agent 与上游官方 Agent 一致的实际连接流程：
 4. 连接失败时按 `max_retries` 和 `reconnect_interval` 重试。
 5. v2 WebSocket 多次失败后进入 POST fallback。
 6. fallback 同时运行 report POST 和 `agent.pull` 长轮询，并按重连间隔恢复 WebSocket。
-7. 检测到服务端不支持 v2 时回退 v1；连接周期结束后会再次探测 v2。
 
 服务端 WebSocket 读取超时约 11 秒。自定义 Agent 应确保 report 或其他消息间隔小于该值；推荐 3-5 秒，不要把 `interval` 调到 11 秒以上后仍期望长连接稳定。
 
@@ -109,12 +107,13 @@ POST report 或 `agent.pull` 会刷新节点 fallback 在线状态；约 35 秒�
 | 方法 | 用途 | WebSocket | POST |
 | --- | --- | --- | --- |
 | `agent.report` | 实时指标上报 | 支持 | 支持 |
-| `agent.basicInfo` | 静态基础信息 | 支持 | 支持，Lite 配套 Agent 与上游官方 Agent 均使用 |
+| `agent.basicInfo` | 静态基础信息 | 支持 | 支持 |
 | `agent.pingResult` | Ping 结果 | 支持 | 支持 |
+| `agent.taskResult` | 远程执行结果 | 支持 | 支持 |
 | `agent.routeResult` | 回程路由结果 | 支持 | 支持 |
 | `agent.pull` | 拉取待下发事件 | 立即返回 | 最长等待约 25 秒 |
 
-服务端不接受 `agent.taskResult` 或 `agent.event` 作为 Agent 上行方法。命令结果必须调用 `/api/clients/task/result`。
+`agent.event` 不是 Agent 上行方法。远程执行结果必须通过 `agent.taskResult` 上报，旧 `/api/clients/task/result` 已删除。
 
 ### `agent.report`
 
@@ -228,7 +227,8 @@ GPU 明细：
       "gpu_name": "None",
       "virtualization": "kvm",
       "version": "1.0.0",
-      "remote_control_protected": false
+      "remote_protocol": 2,
+      "remote_control_enabled": false
     }
   },
   "id": "basic-1"
@@ -251,10 +251,11 @@ GPU 明细：
 | `gpu_name` | string | 否 | GPU 摘要 |
 | `virtualization` | string | 否 | 虚拟化类型 |
 | `version` | string | 建议 | Agent 版本，服务端不解析格式 |
-| `remote_control_protected` | boolean | 否 | 是否因安全策略阻止远程控制 |
+| `remote_protocol` | integer | 远程管理 | 当前必须为 `2` |
+| `remote_control_enabled` | boolean | 远程管理 | Agent 本地是否明确允许终端、文件和远程执行 |
 | `month_rotate` | integer | 握手时 | `0` 禁用，`1..31` 为流量重置日 |
 
-服务端启用 GeoIP 时，会根据上报 IP 补充地区。v2 基础信息没有可靠的连接 IP 兜底，自定义 Agent 如需地区识别应正确上报至少一个 IP。
+服务端启用 GeoIP 时，会根据上报 IP 补充地区。没有上报 IP 时，服务端可能使用连接来源地址兜底；经过代理或存在多出口时，自定义 Agent 仍应正确上报至少一个实际节点 IP。
 
 响应包含两种配置握手：
 
@@ -274,7 +275,7 @@ GPU 明细：
 }
 ```
 
-收到 `request_config_state=true` 时，Lite 配套 Agent 会与上游官方 Agent 一样再次上传当前 `month_rotate`。服务端设置优先时，Agent 应应用 `config.month_rotate`。
+收到 `request_config_state=true` 时，Lite 配套 Agent 会再次上传当前 `month_rotate`。服务端设置优先时，Agent 应应用 `config.month_rotate`。
 
 ### `agent.pingResult`
 
@@ -316,7 +317,7 @@ GPU 明细：
 }
 ```
 
-`finished_at` 必须是带时区时间。Lite 当前配套 Agent 与上游官方 Agent 的内置回程探测都实际执行 ICMP traceroute；`protocol` 字段会原样回传，但不要据此假定已支持 TCP/UDP traceroute。
+`finished_at` 必须是带时区时间。Lite-agent 的内置回程探测实际执行 ICMP traceroute；`protocol` 字段会原样回传，但不要据此假定已支持 TCP/UDP traceroute。
 
 ### `agent.pull`
 
@@ -379,22 +380,28 @@ fallback 采用至少一次投递语义。Agent 必须按事件 `id` 去重，�
 }
 ```
 
-执行前必须检查本地远程控制开关和安全策略。Lite 配套 Agent 在 Windows 使用 PowerShell，在 Unix 使用 `sh -s`。
+执行前必须检查本地 `remote_control_enabled`。Lite 配套 Agent 在 Windows 使用 PowerShell，在 Unix 使用 `sh -s`。
 
-结果不走 v2 method，而是：
-
-`POST /api/clients/task/result`
+结果使用 `agent.taskResult`：
 
 ```json
 {
-  "task_id": "task-id",
-  "result": "ok\n",
-  "exit_code": 0,
-  "finished_at": "2026-08-04T08:00:00Z"
+  "jsonrpc": "2.0",
+  "method": "agent.taskResult",
+  "params": {
+    "task_id": "task-id",
+    "result": "ok\n",
+    "exit_code": 0,
+    "finished_at": "2026-08-04T08:00:00Z",
+    "status": "finished"
+  },
+  "id": "task-result-1"
 }
 ```
 
-当前服务端使用接收时间作为完成时间，额外的 `finished_at` 会被兼容忽略。
+`status` 支持 `finished` 和 `interrupted`。Lite-agent 会先把任务状态持久化，再执行命令；同一 `task_id` 通过 WebSocket 或 POST fallback 重复送达时都不会再次执行。Agent 在执行期间异常退出后，会以 `interrupted` 和 `execution status unknown` 补报，不会补偿重跑。
+
+Lite-agent 默认保留最近 24 小时、最多 256 条已确认任务记录。尚未成功上报的结果会保留并重试；这里的容量单位是记录条数。
 
 ### Ping 任务
 
@@ -452,77 +459,21 @@ fallback 采用至少一次投递语义。Agent 必须按事件 `id` 去重，�
 Agent 随后连接 `/api/clients/remote`，请求头必须包含：
 
 ```http
-X-Komari-Remote-Session: <session-id>
-X-Komari-Remote-Ticket: <ticket>
+X-Lite-Remote-Session: <session-id>
+X-Lite-Remote-Ticket: <ticket>
 ```
 
 该独立 WebSocket 承载终端和文件协议，主 RPC 通道只负责发起会话。Ticket 是一次性授权，不得复用。
 
-旧终端当前仍可能收到兼容消息：
-
-```json
-{
-  "message": "terminal",
-  "request_id": "session-id"
-}
-```
-
-Agent 随后连接 `/api/clients/terminal`，并发送：
-
-```http
-X-Komari-Terminal-Session: <session-id>
-```
-
-上游旧文档中的 `?id=` 不符合 Lite 当前服务端实现。第三方 Agent 应使用请求头。
+旧终端协议（`/api/clients/terminal`、`agent.terminal.request`、`"message": "terminal"`）已删除，当前版本不会降级。
 
 ### 消息事件
 
-Lite 配套 Agent 与上游官方 Agent 都能解析 `agent.message` 和 `agent.event` 并记录日志，但当前 Lite 服务端没有把它们作为通用外部消息总线。不要依赖它们承载必须送达的业务任务。
+Lite 配套 Agent 能解析 `agent.message` 和 `agent.event` 并记录日志，但当前 Lite 服务端没有把它们作为通用外部消息总线。不要依赖它们承载必须送达的业务任务。
 
-## v1 兼容协议
+## 已移除的旧协议
 
-### 基础信息
-
-`POST /api/clients/uploadBasicInfo`
-
-body 直接使用基础信息对象，不包 `info`。响应可能包含 `config` 或 `request_config_state`。
-
-### 实时 report
-
-- WebSocket：`GET /api/clients/report`
-- POST：`POST /api/clients/report`
-
-body 直接使用 report 对象，不包 JSON-RPC envelope。
-
-### v1 事件
-
-远程执行：
-
-```json
-{
-  "message": "exec",
-  "task_id": "task-id",
-  "command": "echo ok"
-}
-```
-
-Ping：
-
-```json
-{
-  "message": "ping",
-  "ping_task_id": 12,
-  "ping_type": "tcp",
-  "ping_target": "example.com:443"
-}
-```
-
-### v1 Ping 轮询
-
-- `GET /api/clients/ping/tasks` 获取分配给当前节点的任务。
-- `POST /api/clients/ping/result` 上传 `task_id`、`value`、`ping_type`。
-
-v1 没有回程路由协议，也没有与 v2 相同的可靠 fallback 事件队列。
+V1 上报、Ping 轮询、任务结果和旧终端通道已删除。当前版本只接受协议 2，不会自动降级。
 
 ## Lite-agent 参数
 
@@ -534,9 +485,9 @@ v1 没有回程路由协议，也没有与 v2 相同的可靠 fallback 事件队
 | `--info-report-interval` | `AGENT_INFO_REPORT_INTERVAL` | `5` 分钟 | 基础信息间隔 |
 | `--max-retries` | `AGENT_MAX_RETRIES` | `3` | 连接重试次数 |
 | `--reconnect-interval` | `AGENT_RECONNECT_INTERVAL` | `5` 秒 | 重连间隔 |
-| `--protocol-version` | `AGENT_PROTOCOL_VERSION` | `2` | `1` 或 `2` |
+| `--protocol-version` | `AGENT_PROTOCOL_VERSION` | `2` | 仅支持 `2` |
 | `--disable-compression` | `AGENT_DISABLE_COMPRESSION` | `false` | 关闭 v2 gzip 和 WS 压缩 |
-| `--disable-web-ssh` | `AGENT_DISABLE_WEB_SSH` | `false` | 禁止远程终端、文件和命令 |
+| `--enable-remote-control` | `AGENT_REMOTE_CONTROL_ENABLED` | `false` | 启用远程终端、文件和命令 |
 | `--ignore-unsafe-cert` | `AGENT_IGNORE_UNSAFE_CERT` | `false` | 忽略证书错误 |
 | `--prefer-ip-version` | `AGENT_PREFER_IP_VERSION` | 空 | 面板连接优先 4 或 6 |
 | `--month-rotate` | `AGENT_MONTH_ROTATE` | `0` | 流量重置日 |
@@ -551,8 +502,8 @@ v1 没有回程路由协议，也没有与 v2 相同的可靠 fallback 事件队
 3. report 间隔保持在服务端读取超时以内。
 4. fallback 同时运行 report 和单一 pull 长轮询。
 5. 按事件 ID 去重，成功后再 ack。
-6. 命令、终端和文件访问受本地禁用开关保护。
+6. 命令、终端和文件访问受 Agent 本地正向开关保护。
 7. 所有容量、累计流量和速率使用非负 64 位整数。
 8. Ping 失败上报 `-1`，不要丢弃失败样本。
-9. 远程执行结果继续走独立 HTTP 端点。
+9. 远程执行结果通过 v2 `agent.taskResult` 上报。
 10. 未识别方法记录日志后忽略，不能导致主连接退出。
