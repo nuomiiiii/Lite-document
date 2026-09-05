@@ -32,7 +32,7 @@ Lite 同时保留兼容 HTTP API，并提供 JSON-RPC 2.0 入口。新主题和�
 - `X-Two-Factor-Code: 123456`
 - RPC `params` 中的 `2fa_code`、`two_factor_code` 或 `otp`
 
-远程终端和远程执行必须先通过 `/api/admin/client/remote/authorize` 重新验证当前 TOTP，未启用 2FA 时则重新输入管理员密码，再以页面专属授权创建会话或下发命令。API Key 不能签发或使用远程授权。
+远程终端和远程执行必须重新验证当前 TOTP，未启用 2FA 时则重新输入管理员密码，再以页面专属授权创建会话或下发命令。API Key 不能签发或使用远程授权。
 
 不要把管理员 Cookie、API Key、密码、2FA 验证码或远程授权放进公开主题配置。
 
