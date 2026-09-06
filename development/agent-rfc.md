@@ -3,7 +3,7 @@
 本页描述 Lite 服务端与 `nuomiiiii/Lite-agent` 当前实际使用的线协议，供第三方 Agent 和采集器开发。它不是对上游协议的兼容承诺。
 
 ::: info Agent 口径
-本文以即将发布的 Lite `2.3.2` 和已发布的 Lite-agent `2.3.1.0` 为实现基线。当前只支持协议 2，不保留 V1 端点、旧远程终端消息或自动降级。
+本文以已发布的 Lite `2.3.2` 和 Lite-agent `2.3.1.1` 为实现基线。当前只支持协议 2，不保留 V1 端点、旧远程终端消息或自动降级。
 :::
 
 ::: danger 安全边界
@@ -44,6 +44,7 @@ Authorization: Bearer <client-token>
 | `/api/clients/ping/tasks` | 已删除 | 旧 V1 Ping 拉取，当前版本不可用 |
 | `/api/clients/ping/result` | 已删除 | 旧 V1 Ping 结果，当前版本不可用 |
 | `/api/clients/terminal` | 已删除 | 旧终端通道，当前版本不可用 |
+| `/api/clients/register` | 已删除 | 旧自动发现注册，当前版本不可用 |
 | `/api/clients/remote` | WebSocket GET | 远程终端与文件会话通道 |
 
 Lite 配套 Agent 还可同时发送 Cloudflare Access Service Token：

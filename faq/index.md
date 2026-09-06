@@ -16,7 +16,7 @@
 
 ## Agent 的状态、日志和卸载命令在哪里？
 
-[Agent 安装与维护](/install/agent) 按 systemd、Docker、OpenRC、OpenWrt、Windows 和 macOS 分别列出了状态检查、日志、重启、更新和卸载命令；默认 systemd 安装还提供一键完全卸载。完整卸载前先确认是否需要保留 `auto-discovery.json` 和 `net_static.json`。
+[Agent 安装与维护](/install/agent) 按 systemd、Docker、OpenRC、OpenWrt、Windows 和 macOS 分别列出了状态检查、日志、重启、更新和卸载命令；默认 systemd 安装还提供一键完全卸载。历史自动发现安装在迁移前需确认是否保留 `auto-discovery.json`；需要保留本地流量周期时，还应备份 `net_static.json`。
 
 ## 数据库一小时增加很多，是否代表一天线性增长？
 

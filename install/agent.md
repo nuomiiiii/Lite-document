@@ -1,8 +1,8 @@
 # Agent 安装与维护
 
-当前已发布版本为 Lite-agent `2.3.1.0`。请配合 Lite `2.3.1` 或更高版本使用；Lite `2.3.2` 发布后建议升级到该版本组合。Agent 使用独立更新源和 Lite 安装目录，并通过 WebSocket 心跳、读超时和快速重连降低进程运行但面板显示离线的概率。
+当前已发布版本为 Lite-agent `2.3.1.1`。请配合 Lite `2.3.1` 或更高版本使用，当前推荐组合为 Lite `2.3.2`。Agent 使用独立更新源和 Lite 安装目录，并通过 WebSocket 心跳、读超时和快速重连降低进程运行但面板显示离线的概率。
 
-本页覆盖 Agent 的安装、状态检查、日志、重启、更新和卸载。节点配置与在线下发见 [Agent 接入与配置](/remote/agent)，批量部署见 [Agent 自动发现](/install/agent-ad)。
+本页覆盖 Agent 的安装、状态检查、日志、重启、更新和卸载。节点配置与在线下发见 [Agent 接入与配置](/remote/agent)，旧自动发现安装的处理方法见 [旧自动发现安装迁移](/install/agent-ad)。
 
 ## 安装前确认
 
@@ -35,12 +35,12 @@ sudo bash install-lite-agent.sh \
 
 安装脚本会识别 systemd、OpenRC、OpenWrt procd、macOS launchd 或 Upstart，并创建对应服务。新安装默认关闭远程控制；需要使用远程终端、文件管理或远程执行时，将最后一项改为 `--enable-remote-control`，并同时在 Lite 后台开启“允许远程管理”。
 
-脚本再次运行时会替换原服务和程序，适合更新或修改必须重装才能生效的安装参数。从旧 `komari-agent` 安装迁移时，会保留可识别的节点身份、自动发现凭据、流量状态、配置和原有远程控制状态。
+脚本再次运行时会替换原服务和程序，适合更新或修改必须重装才能生效的安装参数。从旧 `komari-agent` 安装迁移时，会保留可识别的节点身份、历史自动发现身份文件、流量状态、配置和原有远程控制状态。
 
 FreeBSD 请从 [Agent Releases](https://github.com/nuomiiiii/Lite-agent/releases) 下载对应架构的二进制，按 [JSON 配置](/remote/agent#json-配置)启动，并自行配置系统服务。当前脚本不会自动创建 FreeBSD 原生 rc.d 服务。
 
 ::: danger 保护节点凭据
-Cloudflare Access Service Token 和 `auto-discovery.json` 都属于敏感凭据。不要把完整安装命令、服务启动参数或日志原样贴到公开工单。
+Cloudflare Access Service Token、完整安装命令和历史身份文件都属于敏感信息。不要把它们或服务启动参数、日志原样贴到公开工单。
 :::
 
 ### Docker
@@ -54,12 +54,12 @@ docker pull ghcr.io/nuomiiiii/lite-agent:latest
 需要固定当前正式版时使用：
 
 ```bash
-docker pull ghcr.io/nuomiiiii/lite-agent:2.3.1.0
+docker pull ghcr.io/nuomiiiii/lite-agent:2.3.1.1
 ```
 
 镜像地址必须使用小写 `lite-agent`；如果后台生成的命令中仍是 `Lite-agent`，请先改为上述小写地址，否则 Docker 会拒绝执行。
 
-自动发现部署必须把 `/app/auto-discovery.json` 持久化到宿主机，并确保每个容器使用独立文件，完整示例见 [Agent 自动发现](/install/agent-ad#docker)。Docker Agent 不会在容器内替换自身程序，更新时必须拉取新镜像并重建容器。
+新安装和重建容器应使用 Lite 后台为具体节点生成的普通 `docker run` 或 Compose 配置。仍在运行的旧自动发现容器需先按[旧自动发现安装迁移](/install/agent-ad#docker-重建)处理。Docker Agent 不会在容器内替换自身程序，更新时必须拉取新镜像并重建容器。
 
 ### Windows
 
@@ -187,7 +187,7 @@ tail -n 100 /var/log/lite-agent.log
 Windows 安装脚本默认不会创建独立的 Agent 文本日志。先用 `Get-Service` 和 Lite 后台的最后上报时间判断状态；服务启动失败时，再查看“事件查看器 → Windows 日志 → 应用程序”中的 NSSM 或服务错误。
 
 ::: warning 分享日志前先脱敏
-删除面板域名、IP、自动发现密钥、Cloudflare Access 凭据和完整启动参数。不要为了排查而关闭 TLS 校验。
+删除面板域名、IP、Cloudflare Access 凭据和完整启动参数。不要为了排查而关闭 TLS 校验。
 :::
 
 ## 根据日志排查
@@ -214,7 +214,7 @@ sudo systemctl restart lite-agent
 sudo systemctl status lite-agent --no-pager -l
 ```
 
-更新可在 Lite 后台发起，也可以重新执行当前节点的完整安装命令。重新运行脚本会替换程序和服务配置，但不会主动删除安装目录中的 `auto-discovery.json`、`net_static.json` 等数据文件，也会保留升级前的远程控制状态。新安装默认关闭远程控制，不代表已有节点升级后会被自动关闭。
+更新可在 Lite 后台发起，也可以重新执行当前节点的完整安装命令。重新运行脚本会替换程序和服务配置，但不会主动删除安装目录中的 `auto-discovery.json`、`net_static.json` 等数据文件，也会保留升级前的远程控制状态。使用普通部署命令后，遗留的 `auto-discovery.json` 不再参与启动；仍使用旧自动发现参数的安装必须先完成迁移。新安装默认关闭远程控制，不代表已有节点升级后会被自动关闭。
 
 ### Docker
 
@@ -222,7 +222,7 @@ sudo systemctl status lite-agent --no-pager -l
 docker pull ghcr.io/nuomiiiii/lite-agent:latest
 ```
 
-拉取后使用原来的参数、卷挂载和重启策略重建容器。不要为了更新而删除持久化的 `auto-discovery.json`。
+拉取后使用 Lite 后台为原节点生成的普通参数、卷挂载和重启策略重建容器。旧自动发现容器在改用普通部署命令并确认原节点上线前，不要删除持久化的 `auto-discovery.json`。
 
 ### OpenRC、OpenWrt、Windows 与 macOS
 
@@ -252,7 +252,7 @@ launchctl kickstart -k "gui/$(id -u)/com.lite.lite-agent"
 
 ### 一键完全卸载（默认 systemd 安装）
 
-确认不再需要恢复节点身份后，可复制并执行下面这一条命令。它会停止并删除默认的 `lite-agent` 服务，同时永久删除 `/opt/lite-agent` 中的程序、自动发现凭据和本地流量状态：
+确认不再需要恢复节点身份后，可复制并执行下面这一条命令。它会停止并删除默认的 `lite-agent` 服务，同时永久删除 `/opt/lite-agent` 中的程序、历史身份文件和本地流量状态：
 
 ```bash
 sudo sh -eu -c 'if [ "$(systemctl show -p LoadState --value lite-agent.service)" != "not-found" ]; then systemctl disable --now lite-agent.service; fi; rm -f /etc/systemd/system/lite-agent.service; systemctl daemon-reload; systemctl reset-failed lite-agent.service 2>/dev/null || true; rm -rf -- /opt/lite-agent'
@@ -280,7 +280,7 @@ sudo rm -rf /opt/lite-agent
 ```
 
 ::: danger 完整清理不可恢复
-删除安装目录会同时删除 Agent 程序、自动发现凭据和本地流量状态。准备重装并继续使用原节点时，应保留 `auto-discovery.json`；需要保留本地流量周期时，还应备份 `net_static.json`。
+删除安装目录会同时删除 Agent 程序、历史身份文件和本地流量状态。旧自动发现安装在改用普通部署命令前，应保留 `auto-discovery.json`；需要保留本地流量周期时，还应备份 `net_static.json`。
 :::
 
 ### Docker

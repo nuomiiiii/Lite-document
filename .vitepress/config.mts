@@ -23,7 +23,6 @@ const sidebar = [
     text: "Agent 节点",
     items: [
       { text: "安装与维护", link: "/install/agent" },
-      { text: "Agent 自动发现", link: "/install/agent-ad" },
       { text: "接入与配置", link: "/remote/agent" },
       { text: "远程终端与文件", link: "/remote/terminal" },
     ],

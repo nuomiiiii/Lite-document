@@ -68,7 +68,9 @@ docker run -d \
 
 ## 升级到 Lite 2.3.2
 
-Lite `2.3.2` 只接受 Agent 协议 2。建议先将节点升级到已发布的 Lite-agent `2.3.1.0`，再更新 Lite；只支持旧协议的 Agent 在服务端更新后将无法继续上报。
+Lite `2.3.2` 只接受 Agent 协议 2。建议先将节点升级到已发布的 Lite-agent `2.3.1.1`，再更新 Lite；只支持旧协议的 Agent 在服务端更新后将无法继续上报。
+
+Lite `2.3.2` 已删除自动发现注册接口、后台密钥设置和服务器页入口。新节点及 Docker 重建应使用后台为具体节点生成的普通部署命令。旧安装仍带 `--auto-discovery` 时，Lite-agent `2.3.1.1` 只读取已有 `auto-discovery.json` 继续使用原节点身份；文件缺失、损坏或身份不完整时会停止启动，不会重新注册。更新前请按[旧自动发现安装迁移](/install/agent-ad)改用原节点的普通部署命令。
 
 远程管理在新安装中默认关闭，需要同时开启站点“允许远程管理”和 Agent 本地 `--enable-remote-control`。已有 Lite 实例和 Agent 升级时会保留原有远程可用状态；旧 Agent 配置中的 `disable_web_ssh` 会由新版 Agent 迁移为正向设置，不需要先手工删除旧配置。
 

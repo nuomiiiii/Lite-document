@@ -1,164 +1,40 @@
-# Agent 自动发现
+# 旧自动发现安装迁移
 
-自动发现用于批量接入服务器。目标服务器上的 Agent 携带自动发现密钥首次连接后，Lite 会自动创建节点，不需要在后台逐台添加节点。
+Lite `2.3.2` 已删除自动发现注册接口和后台入口，Lite-agent `2.3.1.1` 也不会再通过自动发现创建新节点。新安装、批量部署和 Docker 重建都应先在 Lite 后台添加节点，再使用该节点“部署指令”中生成的普通命令。
 
-::: info 与上游的关系
-请使用 Lite 后台生成的参数和 [`nuomiiiii/Lite-agent`](https://github.com/nuomiiiii/Lite-agent) 安装包。Lite-agent 会保存自动发现凭据，后续启动时继续使用已经签发的节点身份。
-:::
+本页只用于迁移历史安装，并保留旧文档链接。不要再为新节点配置 `--auto-discovery` 或 `AGENT_AUTO_DISCOVERY_KEY`。
 
-请使用[版本与功能范围](/guide/versioning)中列出的配套 Lite-agent。
+## 现有安装如何继续运行
 
-## 工作方式
+旧安装的启动参数仍带有 `--auto-discovery`、且没有使用普通节点部署参数时，Lite-agent 只会读取程序目录中的现有 `auto-discovery.json`，以原节点身份继续连接。它不会向 Lite 发起注册，也不会创建新节点。
 
-1. 管理员在“系统设置 > 通用”生成并保存自动发现密钥。
-2. 在服务器列表的“自动发现”区域选择目标平台并复制安装命令。
-3. Agent 使用面板地址和自动发现密钥完成首次注册。
-4. 面板创建以 `Auto-` 开头的节点，并为该节点签发独立凭据。
-5. Agent 将凭据保存到程序目录下的 `auto-discovery.json`，后续重启直接复用，不会重复创建节点。
+以下任一情况都会让 Agent 停止启动，并提示从 Lite 中原节点复制普通的 `-e -t` 部署命令：
 
-自动发现密钥只负责首次注册。注册成功后，每台 Agent 使用自己取得的节点凭据连接面板。
+- `auto-discovery.json` 不存在。
+- 文件无法读取、JSON 损坏或内容为空。
+- 保存的节点身份不完整。
 
-## 开启自动发现
+旧安装仍能正常上线时，可以先继续使用，但建议在方便维护时改为普通部署命令，避免后续重建依赖历史文件。
 
-进入“系统设置 > 通用”，找到“自动发现密钥”：
+## 迁移为普通部署
 
-1. 点击“生成”，或填写自定义随机密钥。
-2. 密钥至少需要 12 个字符，建议使用后台生成的 24 位随机值。
-3. 保存设置。
-4. 返回服务器列表，在“自动发现”区域选择 Linux、Windows、macOS 或 Docker。
-5. 按需展开“安装选项”，然后复制后台生成的命令到目标服务器执行。
+1. 在 Lite 后台找到原服务器，打开“节点配置 → 部署指令”。
+2. 选择实际平台和安装选项，保存并复制完整部署命令。
+3. 停止旧 Agent 或容器，并备份当前安装目录及 `auto-discovery.json`。
+4. 使用刚复制的普通命令重新安装；不要再附加 `--auto-discovery`。
+5. 确认 Lite 后台仍是原节点恢复在线，且监控、探测和远程控制状态符合预期。
+6. 验证完成后，再决定是否删除不再使用的历史身份文件。
 
-后台生成的命令会自动使用当前面板地址；配置了脚本访问域名时，以该地址为准。命令中包含真实自动发现密钥，不要把命令粘贴到公开工单、聊天记录或代码仓库。
+迁移时必须从原节点复制部署命令。重新添加一个服务器再安装会得到另一个节点记录，不会接续原节点的历史数据。
 
-## 手动安装命令
+## Docker 重建
 
-推荐优先使用后台生成的命令。下面的示例仅用于需要自行编排部署的情况，请替换：
+历史自动发现容器在继续使用旧启动方式时，必须保留原来的 `/app/auto-discovery.json` 挂载；文件缺失或不完整时，Lite-agent 不会重新注册。
 
-- `https://lite.example.com`：Lite 的 HTTPS 地址。
-- `YOUR_AD_KEY`：后台保存的自动发现密钥。
+重建容器时建议直接改用 Lite 后台为原节点生成的普通 `docker run` 或 Compose 配置，并移除 `--auto-discovery` 和 `AGENT_AUTO_DISCOVERY_KEY`。确认原节点上线前不要删除宿主机上的旧文件。
 
-### Linux
+## 新节点与批量部署
 
-```bash
-wget -qO- 'https://raw.githubusercontent.com/nuomiiiii/Lite-agent/refs/heads/main/install.sh' | sudo bash -s -- --endpoint 'https://lite.example.com' --auto-discovery 'YOUR_AD_KEY'
-```
+当前版本不提供自动创建节点的批量注册流程。每台服务器都要先在 Lite 后台添加节点，再分发各自生成的部署命令；不同节点的完整命令不能互换或共用。
 
-### macOS
-
-```bash
-curl -fsSL 'https://raw.githubusercontent.com/nuomiiiii/Lite-agent/refs/heads/main/install.sh' -o install-lite-agent.sh
-bash install-lite-agent.sh --endpoint 'https://lite.example.com' --auto-discovery 'YOUR_AD_KEY'
-```
-
-### Windows
-
-请在管理员 PowerShell 中执行：
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "iwr 'https://raw.githubusercontent.com/nuomiiiii/Lite-agent/refs/heads/main/install.ps1' -UseBasicParsing -OutFile 'install.ps1'; & '.\install.ps1' '--endpoint' 'https://lite.example.com' '--auto-discovery' 'YOUR_AD_KEY'"
-```
-
-### Docker
-
-```bash
-touch .lite-auto-discovery.json && \
-docker run -d --name lite-agent --restart=always \
-  -v "$(pwd)/.lite-auto-discovery.json:/app/auto-discovery.json" \
-  ghcr.io/nuomiiiii/lite-agent:latest \
-  --endpoint 'https://lite.example.com' \
-  --auto-discovery 'YOUR_AD_KEY'
-```
-
-以上命令适用于 Linux 或 macOS Shell。`touch` 不能省略：绑定单个文件前必须先创建宿主机文件，否则 Docker 可能把它创建成目录，Agent 将无法保存凭据。`-v` 左侧使用 `$(pwd)` 展开后的绝对路径，不要改为只有文件名的 `.lite-auto-discovery.json`，以免被 Docker 当成命名卷。镜像地址中的 `lite-agent` 必须为小写。
-
-每个容器必须使用各自独立的 `auto-discovery.json`。不要把同一份文件挂载给多个 Agent，否则它们会复用同一个节点身份。
-
-Docker Agent 不会在容器内替换自身二进制。升级时请拉取新的 `ghcr.io/nuomiiiii/lite-agent` 镜像并重建容器，同时保留上述凭据文件。
-
-## 常用安装选项
-
-服务器列表中的命令生成器支持以下选项：
-
-| 参数 | 作用 | 说明 |
-| --- | --- | --- |
-| `--enable-remote-control` | 启用远程控制 | 新安装默认关闭；同时需要站点开启远程管理后才会生效，且不能通过后台远程打开 |
-| `--disable-auto-update` | 禁用 Agent 自动更新 | Docker 部署应通过更新镜像升级 |
-| `--ignore-unsafe-cert` | 忽略证书错误 | 仅用于受控测试环境，生产环境不建议使用 |
-| `--memory-include-cache` | 调整内存统计口径 | 将缓存和缓冲区计入内存使用量 |
-| `--get-ip-addr-from-nic` | 从网卡获取 IP | 适合出口地址无法代表节点地址的环境 |
-| `--gpu` | 启用详细 GPU 监控 | 需要系统提供受支持的 GPU 工具或接口 |
-| `--include-nics` | 只统计指定网卡 | 多个网卡名称使用逗号分隔 |
-| `--exclude-nics` | 排除指定网卡 | 多个网卡名称使用逗号分隔 |
-| `--include-mountpoint` | 只统计指定挂载点 | 多个挂载点使用分号分隔 |
-| `-i`, `--interval` | 数据采集间隔 | 单位为秒；后台命令生成器最低按 1 秒处理 |
-| `--month-rotate` | Agent 本地流量月度重置日 | `1` 至 `31`；不启用时为 `0` |
-
-以下参数只作用于安装脚本，不会传给 Docker 容器中的 Agent：
-
-| 参数 | 作用 |
-| --- | --- |
-| `--install-ghproxy` | 为安装脚本指定 GitHub 下载代理 |
-| `--install-dir` | 指定 Agent 安装目录 |
-| `--install-service-name` | 指定系统服务名称 |
-
-其他参数、环境变量和 JSON 配置方式见 [Agent 接入](/remote/agent)，最终以 `nuomiiiii/Lite-agent` 的 `--help` 输出为准。
-
-## Cloudflare Access
-
-如果面板受到 Cloudflare Access Service Token 保护，自动发现请求与后续 Agent 连接都需要同时提供 Client ID 和 Client Secret：
-
-```bash
---cf-access-client-id 'CLIENT_ID' \
---cf-access-client-secret 'CLIENT_SECRET'
-```
-
-两个参数必须成对配置。不要把 Service Token 和自动发现密钥写入公开仓库。
-
-## 批量部署
-
-同一个自动发现密钥可以用于接入多台服务器，每台服务器会获得不同的节点凭据。可通过 SSH、Ansible 或云主机初始化脚本分发后台生成的命令。
-
-批量部署时请遵守以下原则：
-
-- 把面板地址和自动发现密钥存放在部署系统的加密变量中。
-- 不要把真实密钥直接提交到脚本仓库。
-- 确认每台服务器的主机名可区分；自动创建的名称可在后台再次修改。
-- 确保每台服务器都能访问 Lite 的 HTTPS 地址。
-- 每台 Agent 使用独立安装目录；每个 Docker 实例使用独立凭据文件。
-- 建议先在一台服务器验证命令和参数，再扩大部署范围。
-
-## 密钥轮换与节点重装
-
-- 修改或清空自动发现密钥只影响后续注册，不会让已经注册的 Agent 离线。
-- 怀疑密钥泄露时，应立即生成新密钥并保存；尚未注册的服务器改用新命令。
-- 普通升级或重启不要删除该文件，否则 Agent 会再次注册并产生重复节点。
-- 如果后台已经删除原节点，需要重新接入：先停止 Agent，删除本机的 `auto-discovery.json`，再使用当前自动发现密钥启动；随后清理后台残留的旧节点记录。
-
-## 故障排除
-
-### 返回 403 或提示密钥无效
-
-- 确认“系统设置 > 通用”中已保存自动发现密钥。
-- 确认密钥不少于 12 个字符，并且命令没有遗漏或多出空格。
-- 密钥轮换后，尚未注册的服务器必须使用新命令。
-- 如果使用反向代理或安全网关，确认它没有移除 Agent 请求的认证信息。
-
-### Docker 重启后出现重复节点
-
-检查 `/app/auto-discovery.json` 是否正确绑定到宿主机文件，并确认该文件在容器重建后仍然存在。不要只挂载临时容器层，也不要让多个容器共享同一文件。
-
-### 注册成功但节点没有上线
-
-- 检查面板地址是否可以从 Agent 所在服务器访问。
-- 检查 HTTPS 证书、DNS、反向代理和 WebSocket 转发。
-- 查看 Agent 服务日志，确认没有凭据、证书或连接错误。
-
-Linux systemd 安装可查看：
-
-```bash
-sudo journalctl -u lite-agent -f
-```
-
-如果使用了自定义服务名，请把 `lite-agent` 替换为实际名称。
-
-其他平台的状态检查、重启、日志排查和完整卸载命令见 [Agent 安装与维护](/install/agent)。
+安装、状态检查、日志和更新操作见 [Agent 安装与维护](/install/agent)。
