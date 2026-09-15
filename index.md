@@ -20,7 +20,7 @@ features:
   - title: 部署与升级
     details: Docker、Linux 脚本、二进制安装，以及数据迁移、备份和回退注意事项。
   - title: 仪表盘配置
-    details: 预制布局、模块开关与排序、卡片宽度、刷新频率和 Top 排行口径。
+    details: 预制布局、模块排序、近 30 天流量与日均用量、每日服务器流量明细。
   - title: 数据与存储
     details: 说明数据库占用、数据保留、备份迁移、WAL 与空间回收。
   - title: Agent 全生命周期
@@ -30,7 +30,7 @@ features:
   - title: 成本中心
     details: 汇总服务器资费、日月年费用、附加费用、剩余价值、到期提醒和多币种参考金额。
   - title: 远程管理
-    details: Agent 接入、远程终端、文件管理、任务下发和反向代理兼容要求。
+    details: 多会话终端、文件管理、任务下发，以及 MCP 代理接入、AI 授权与撤销。
   - title: HTTPS 与安全
     details: 内置 HTTPS、Nginx、Cloudflare Tunnel、2FA 与凭据保护的实际配置方式。
   - title: 主题与开发

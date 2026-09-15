@@ -25,6 +25,7 @@ const sidebar = [
       { text: "安装与维护", link: "/install/agent" },
       { text: "接入与配置", link: "/remote/agent" },
       { text: "远程终端与文件", link: "/remote/terminal" },
+      { text: "MCP 代理与 AI 授权", link: "/remote/mcp" },
     ],
   },
   {

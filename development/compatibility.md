@@ -18,13 +18,13 @@ Lite 的内部数据库会继续演进，主题和外部集成应使用公共 AP
 `common:getNodes` 使用独立的主题节点结构。无论匿名访问还是管理员已经登录，都不会返回以下后台字段：
 
 - Agent 版本和私有备注。
-- 部署状态、远程协议及远程控制状态。
+- 部署状态、远程协议、远程控制状态及 MCP 能力字段。
 - 流量重置内部额度与周期。
 - 节点创建时间和更新时间。
 
 节点 UUID、名称、硬件信息、地区、公开备注、分组、标签、带宽、账单和生效流量额度等主题展示字段仍会返回。匿名访问继续过滤隐藏节点，并按站点的访客 IP 设置决定隐藏或脱敏 IP；管理员登录不会让上述后台字段重新出现在 `common:getNodes` 中。
 
-`/api/nodes` 和对应的 `public:getNodesInformation` 是单独保留的兼容接口。它们对所有调用者固定清空响应中的 `version`、`remark`、`ipv4`、`ipv6`，并在 JSON 中省略这些字段；管理员登录或使用 API Key 也不会返回。登录状态只影响这里是否过滤隐藏节点。新主题应优先依赖 `common:getNodes` 的公开字段。
+`/api/nodes` 和对应的 `public:getNodesInformation` 是单独保留的兼容接口。它们对所有调用者固定清空响应中的 `version`、`remark`、`ipv4`、`ipv6`，并在 JSON 中省略这些字段，也不返回 `mcp_full`、`mcp_full_version`；管理员登录或使用 API Key 也不会返回。登录状态只影响这里是否过滤隐藏节点。新主题应优先依赖 `common:getNodes` 的公开字段。
 
 ## 流量口径
 

@@ -73,7 +73,7 @@ Cloudflare Tunnel 管理位于“反向代理”下的独立页签。可在后�
 
 ## Cloudflare Access
 
-为 Web 页面启用 Access 后，浏览器与 Agent 需要分别满足各自的访问策略。Lite `2.3.2` 使用以下连接路径：
+为 Web 页面启用 Access 后，浏览器、Agent 与 MCP 客户端需要分别满足各自的访问策略。Lite `2.3.3` 使用以下连接路径：
 
 | 用途 | 路径 | Access 配置 |
 | --- | --- | --- |
@@ -81,8 +81,12 @@ Cloudflare Tunnel 管理位于“反向代理”下的独立页签。可在后�
 | Agent 上报与任务 | `/api/clients/v2/rpc` | 使用 Service Auth，允许 Agent 的 Service Token |
 | Agent 远程连接 | `/api/clients/remote` | 使用与 Agent 上报相同的 Service Auth 凭据 |
 | 公开大屏实时状态与 RPC | `/api/clients`、`/api/rpc2` | 按该站点面向访客或登录用户的访问策略配置 |
+| MCP 服务与授权发现 | `/mcp`、`/.well-known/oauth-protected-resource`、`/.well-known/oauth-protected-resource/mcp`、`/.well-known/oauth-authorization-server` | 允许 MCP 客户端访问并保留 Authorization 请求头，不缓存响应 |
+| MCP 客户端注册与授权 | `/oauth/register`、`/oauth/authorize`、`/oauth/token`、`/oauth/revoke` | 同时满足客户端请求和浏览器授权跳转，不能只放行后台网页 |
 
 Agent 中需同时配置 Client ID 和 Client Secret，见 [Agent 的 Cloudflare Access 配置](/remote/agent#cloudflare-access)。浏览器终端应沿用正常的 Access 登录策略，不需要为了排查而把整段管理接口设为 Bypass；Lite 自身的登录、重新验证和远程权限检查仍然生效。
+
+MCP 客户端通常不共享浏览器的 Access 登录 Cookie；即使浏览器能够进入授权页，客户端请求仍可能被 Access 登录页或挑战拦截。请根据客户端是否支持额外请求头配置对应策略，保留 Lite 自身的授权检查。MCP 服务及 OAuth 路径需要转发到同一个 Lite 实例，使用与后台一致的外部地址和协议。
 
 ::: warning 不要只放行首页
 只允许 `/` 和静态资源时，页面可能正常显示，但 API 或 WebSocket 仍会被拦截。`/api/clients` 是实时状态入口，仅放行它不能解决浏览器终端 `/api/admin/client/remote` 或 Agent `/api/clients/remote` 的 `403`。

@@ -3,7 +3,7 @@
 本页描述 Lite 服务端与 `nuomiiiii/Lite-agent` 当前实际使用的线协议，供第三方 Agent 和采集器开发。它不是对上游协议的兼容承诺。
 
 ::: info Agent 口径
-本文以已发布的 Lite `2.3.2` 和 Lite-agent `2.3.1.1` 为实现基线。当前只支持协议 2，不保留 V1 端点、旧远程终端消息或自动降级。
+本文以已发布的 Lite `2.3.3` 和 Lite-agent `2.3.3.0` 为实现基线。当前只支持协议 2，不保留 V1 端点、旧远程终端消息或自动降级。
 :::
 
 ::: danger 安全边界
@@ -21,6 +21,7 @@
 | 压缩 | gzip POST、permessage-deflate WebSocket |
 | 回程路由 | `agent.route` / `agent.routeResult` |
 | 远程终端与文件 | `agent.remote.request` + 独立 `/api/clients/remote` WebSocket |
+| MCP 完整管理 | 通过 `agent.pull` 声明 `mcp_full` 能力及版本；需要 Agent 本地允许远程控制 |
 
 Lite-agent 的 `protocol_version` 必须为 `2`。服务端不接受 V1 Agent，Agent 也不会回退到 V1。
 
@@ -225,7 +226,7 @@ GPU 明细：
       "disk_total": 53687091200,
       "gpu_name": "None",
       "virtualization": "kvm",
-      "version": "1.0.0",
+      "version": "2.3.3.0",
       "remote_protocol": 2,
       "remote_control_enabled": false
     }
@@ -325,7 +326,8 @@ GPU 明细：
   "jsonrpc": "2.0",
   "method": "agent.pull",
   "params": {
-    "capabilities": ["exec", "ping", "route", "remote", "config"],
+    "capabilities": ["exec", "ping", "route", "message", "event", "remote", "files", "config", "mcp_full"],
+    "capability_versions": { "mcp_full": 1 },
     "ack_event_ids": ["event-id-1"],
     "last_event_id": ""
   },
@@ -333,7 +335,11 @@ GPU 明细：
 }
 ```
 
-POST 时服务端最多等待约 25 秒，有事件立即返回，无事件返回 `events: []`。Agent 应使用 `ack_event_ids` 确认事件；`capabilities` 和 `last_event_id` 是保留字段，当前不会改变返回结果。
+POST 时服务端最多等待约 25 秒，有事件立即返回，无事件返回 `events: []`。Agent 应使用 `ack_event_ids` 确认事件；`last_event_id` 仍为保留字段。
+
+`capabilities` 与 `capability_versions` 用于声明 MCP 能力。上例适用于已实现 MCP 完整管理且本地远程控制已开启的 Agent；未实现或已关闭时应移除 `mcp_full` 及其版本声明。当前 MCP 能力版本为 `1`，不能只声明支持而不处理对应操作。
+
+Lite-agent 在 WebSocket 连接成功后也会发送 `agent.pull` 声明能力。MCP 能力应放在这里，不应塞入 `agent.basicInfo.info`，以便继续与旧版 Lite 交换基础信息。普通监控、远程协议 2 和 MCP 完整管理是不同能力，不能仅依据 `remote_protocol: 2` 判断 MCP 可用。
 
 每个 Agent 只应保留一个活跃 pull，收到响应后立即发起下一次。report 与 pull 可并行。
 

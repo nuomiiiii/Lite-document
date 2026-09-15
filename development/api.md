@@ -21,8 +21,9 @@ Lite 同时保留兼容 HTTP API，并提供 JSON-RPC 2.0 入口。新主题和�
 | --- | --- | --- |
 | 匿名访客 | 无 | 公开 HTTP API、`public:*`、`common:*` |
 | 管理员会话 | `session_token` Cookie | `/api/admin/*`、`admin:*` |
-| API Key | `Authorization: Bearer <api-key>` | 管理接口和 `admin:*` |
+| API Key | `Authorization: Bearer <api-key>` | 允许 API Key 的管理接口和 `admin:*`；不能签发或使用远程、MCP 授权 |
 | Agent | `Authorization: Bearer <client-token>` | `/api/clients/*`、`client:*`、Agent RFC |
+| MCP 客户端 | 浏览器 OAuth 授权后获取的访问凭据 | `/mcp`，仅限授权中的节点和操作 |
 
 ### 敏感操作与 2FA
 
@@ -35,6 +36,12 @@ Lite 同时保留兼容 HTTP API，并提供 JSON-RPC 2.0 入口。新主题和�
 远程终端和远程执行必须重新验证当前 TOTP，未启用 2FA 时则重新输入管理员密码。短期授权绑定当前管理员登录会话；终端与文件管理共用 `remote` 范围，远程执行使用独立的 `exec` 范围，二者不能混用。API Key 不能签发或使用远程授权。
 
 不要把管理员 Cookie、API Key、密码、2FA 验证码或远程授权放进公开主题配置。
+
+### MCP 接入
+
+Lite `2.3.3` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权选择节点和有效期后，可以调用命令、交互终端和文件工具；它不获得 `admin:*` 或 Agent 身份。站点 API Key、Agent Token 和浏览器远程授权均不能用于此入口。
+
+客户端应通过 MCP 的工具发现读取当前可用工具与参数，不要把 MCP 请求发送到 `/api/rpc2`。接入、期限、并发限制、操作记录和撤销方式见[MCP 代理与 AI 授权](/remote/mcp)，代理所需路径见[反向代理与 Tunnel](/security/reverse-proxy#cloudflare-access)。
 
 ## HTTP 响应
 
@@ -122,7 +129,7 @@ Lite 同时保留兼容 HTTP API，并提供 JSON-RPC 2.0 入口。新主题和�
   "status": "success",
   "message": "",
   "data": {
-    "version": "2.3.2",
+    "version": "2.3.3",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }
@@ -281,7 +288,7 @@ socket.addEventListener("message", (event) => {
   "jsonrpc": "2.0",
   "id": "version-1",
   "result": {
-    "version": "2.3.2",
+    "version": "2.3.3",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }
