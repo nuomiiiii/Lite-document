@@ -21,9 +21,28 @@ Lite 同时保留兼容 HTTP API，并提供 JSON-RPC 2.0 入口。新主题和�
 | --- | --- | --- |
 | 匿名访客 | 无 | 公开 HTTP API、`public:*`、`common:*` |
 | 管理员会话 | `session_token` Cookie | `/api/admin/*`、`admin:*` |
-| API Key | `Authorization: Bearer <api-key>` | 允许 API Key 的管理接口和 `admin:*`；不能签发或使用远程、MCP 授权 |
+| API Key | `Authorization: Bearer <api-key>` | 仅限允许 API Key 的管理接口和 `admin:*` 方法；具体限制见下文 |
 | Agent | `Authorization: Bearer <client-token>` | `/api/clients/*`、`client:*`、Agent RFC |
 | MCP 客户端 | 浏览器 OAuth 授权后获取的访问凭据 | `/mcp`，仅限授权中的节点和操作 |
+
+### API Key 权限限制
+
+以下管理操作要求管理员登录会话，不能使用 API Key：
+
+| 操作 | 接口或受限字段 |
+| --- | --- |
+| 下载备份或配置包 | `GET /api/admin/download/backup` |
+| 分段上传、合并或取消上传 | `/api/admin/upload/*` |
+| 修改账号信息 | `POST /api/admin/update/user` |
+| 主题管理与主题市场操作，包括读取列表 | `/api/admin/theme/*` |
+| 读取或重置节点 Token | `GET /api/admin/client/{uuid}/token`、`POST /api/admin/client/token/rotate`；RPC `admin:getClientToken`、`admin:rotateClientToken` |
+| 修改自定义 HTML 或切换当前主题 | `POST /api/admin/settings/` 或 RPC `admin:editSettings` 中的 `custom_head`、`custom_body`、`theme` 字段 |
+
+上述请求被拒绝时，备份、上传、账号、主题和节点 Token 的 HTTP 接口返回 `403`，设置 HTTP 接口当前返回 `401`；直接调用对应 RPC 方法会返回权限不足错误 `-32041`。附带 2FA 验证码也不能代替管理员登录会话。
+
+通过设置接口更新其他选项时，应只提交需要修改的字段；只要请求包含上述受限字段，即使值未变化，也会被拒绝。
+
+API Key 同样不能签发或使用远程管理、MCP 授权。外部脚本应按具体接口核对支持范围，不要将 API Key 视为可调用全部后台接口的管理员登录凭据。
 
 ### 敏感操作与 2FA
 
@@ -33,7 +52,7 @@ Lite 同时保留兼容 HTTP API，并提供 JSON-RPC 2.0 入口。新主题和�
 - `X-Two-Factor-Code: 123456`
 - RPC `params` 中的 `2fa_code`、`two_factor_code` 或 `otp`
 
-远程终端和远程执行必须重新验证当前 TOTP，未启用 2FA 时则重新输入管理员密码。短期授权绑定当前管理员登录会话；终端与文件管理共用 `remote` 范围，远程执行使用独立的 `exec` 范围，二者不能混用。API Key 不能签发或使用远程授权。
+API Key 不能签发或使用远程授权。
 
 不要把管理员 Cookie、API Key、密码、2FA 验证码或远程授权放进公开主题配置。
 
@@ -329,7 +348,7 @@ socket.addEventListener("message", (event) => {
 | --- | --- | --- |
 | `public:*` | 访客 | 站点、历史、指标和访客事件 |
 | `common:*` | 访客 | 主题常用节点与记录接口 |
-| `admin:*` | 管理员/API Key | 后台管理与敏感操作 |
+| `admin:*` | 管理员；部分方法允许 API Key | 后台管理，受上述 API Key 权限限制约束 |
 
 稳定公共方法：
 

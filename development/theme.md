@@ -114,7 +114,7 @@ ZIP 根目录必须直接包含 `Lite-theme.json`。兼容旧包时也接受 `ko
 | 类型 | `data` | 后台行为 |
 | --- | --- | --- |
 | `managed` | 配置项数组 | 由内置后台生成表单 |
-| `raw` | 非空 HTML 字符串 | 在后台内容区域用 iframe 显示 |
+| `raw` | 非空 HTML 字符串 | 在后台内容区域用沙箱 iframe 显示，仅允许脚本运行 |
 | `redirect` | 站内相对路径 | 跳转到主题自己的设置页面 |
 
 未写 `type` 的旧主题在部分界面会按 `managed` 识别，但服务端默认值合并要求显式 `type: "managed"`。新主题不要省略该字段。
@@ -265,7 +265,13 @@ const compact = data.theme_settings?.compactCards ?? true;
 }
 ```
 
-raw HTML 来自主题包并在后台 iframe 中显示。只安装可信主题；主题作者仍应避免读取父页面 Cookie、注入远程脚本或发起未经用户确认的管理操作。
+raw HTML 来自主题包，在后台通过沙箱 iframe 显示。沙箱仅启用 `allow-scripts`，允许运行 JavaScript，但不授予与后台相同的来源权限：
+
+- 不能直接访问父页面 DOM、后台 Cookie 或后台的 `localStorage`、`sessionStorage`，也不能依赖沙箱内的这些存储接口。
+- 不允许原生表单提交、弹出新窗口、脚本对话框或跳转顶层页面。
+- 请求面板接口时不再按后台同源请求处理，不能依赖继承后台登录状态来读取或保存设置。
+
+已有 raw 配置页如果依赖上述能力，需要适配。需要由后台保存的常规配置，优先使用 `managed`，由内置表单完成编辑和保存。只安装可信主题，主题脚本仍应避免发起未经用户确认的操作。
 
 ### redirect 配置
 
