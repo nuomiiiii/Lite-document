@@ -125,6 +125,11 @@ body {
   overflow-wrap: normal;
 }
 
+.vp-doc .dashboard-presets-table :is(th, td):first-child {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
 .vp-doc :not(pre) > code {
   vertical-align: 1.5px;
 }
