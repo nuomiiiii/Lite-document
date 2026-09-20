@@ -37,6 +37,7 @@ const sidebar = [
       { text: "监测与回程", link: "/admin/monitoring" },
       { text: "流量与报告", link: "/admin/traffic" },
       { text: "通知与告警", link: "/admin/notifications" },
+      { text: "日志", link: "/admin/logs" },
     ],
   },
   {

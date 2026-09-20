@@ -3,7 +3,7 @@
 本页描述 Lite 服务端与 `nuomiiiii/Lite-agent` 当前实际使用的线协议，供第三方 Agent 和采集器开发。它不是对上游协议的兼容承诺。
 
 ::: info Agent 口径
-本文以已发布的 Lite `2.3.4` 和 Lite-agent `2.3.3.3` 为实现基线。当前只支持协议 2，不保留 V1 端点、旧远程终端消息或自动降级。
+本文以已发布的 Lite `2.3.4` 和 Lite-agent `2.3.3.4` 为实现基线。当前只支持协议 2，不保留 V1 端点、旧远程终端消息或自动降级。
 :::
 
 ::: danger 安全边界
@@ -226,7 +226,7 @@ GPU 明细：
       "disk_total": 53687091200,
       "gpu_name": "None",
       "virtualization": "kvm",
-      "version": "2.3.3.3",
+      "version": "2.3.3.4",
       "remote_protocol": 2,
       "remote_control_enabled": false
     }
@@ -253,7 +253,9 @@ GPU 明细：
 | `version` | string | 建议 | Agent 版本，服务端不解析格式 |
 | `remote_protocol` | integer | 远程管理 | 当前必须为 `2` |
 | `remote_control_enabled` | boolean | 远程管理 | Agent 本地是否明确允许终端、文件和远程执行 |
-| `month_rotate` | integer | 握手时 | `0` 禁用，`1..31` 为流量重置日 |
+| `month_rotate` | integer | 握手时 | `0` 禁用，`1..31` 为每月流量重置日期 |
+| `month_rotate_time` | string | 握手时 | 重置时间，格式为 `HH:MM:SS`；空值按 `00:00:00` |
+| `month_rotate_timezone` | string | 握手时 | IANA 时区；空值按 `Asia/Shanghai` |
 
 服务端启用 GeoIP 时，会根据上报 IP 补充地区。没有上报 IP 时，服务端可能使用连接来源地址兜底；经过代理或存在多出口时，自定义 Agent 仍应正确上报至少一个实际节点 IP。
 
@@ -262,7 +264,11 @@ GPU 明细：
 ```json
 {
   "status": "success",
-  "config": { "month_rotate": 1 }
+  "config": {
+    "month_rotate": 1,
+    "month_rotate_time": "00:00:00",
+    "month_rotate_timezone": "Asia/Shanghai"
+  }
 }
 ```
 
@@ -275,7 +281,7 @@ GPU 明细：
 }
 ```
 
-收到 `request_config_state=true` 时，Lite 配套 Agent 会再次上传当前 `month_rotate`。服务端设置优先时，Agent 应应用 `config.month_rotate`。
+收到 `request_config_state=true` 时，Lite 配套 Agent 会再次上传当前 `month_rotate`、`month_rotate_time` 和 `month_rotate_timezone`。服务端设置优先时，Agent 应把 `config` 中提供的流量重置字段作为同一套周期配置应用。
 
 ### `agent.pingResult`
 
@@ -444,11 +450,13 @@ Lite-agent 默认保留最近 24 小时、最多 256 条已确认任务记录。
 
 ```json
 {
-  "month_rotate": 1
+  "month_rotate": 1,
+  "month_rotate_time": "12:30:00",
+  "month_rotate_timezone": "UTC"
 }
 ```
 
-允许 `0..31`。应用失败时不要确认事件，让服务端可再次投递。
+`month_rotate` 允许 `0..31`；时间使用 `HH:MM` 或 `HH:MM:SS`，时区使用有效的 IANA 名称。日期 `0` 表示关闭；日期超出当月天数时按当月最后一天计算。时间或时区为空时分别按 `00:00:00` 和 `Asia/Shanghai` 处理，以保持已有节点的行为。应用失败时不要确认事件，让服务端可再次投递。
 
 ### 远程终端与文件
 
@@ -495,7 +503,9 @@ V1 上报、Ping 轮询、任务结果和旧终端通道已删除。当前版本
 | `--enable-remote-control` | `AGENT_REMOTE_CONTROL_ENABLED` | `false` | 启用远程终端、文件和命令 |
 | `--ignore-unsafe-cert` | `AGENT_IGNORE_UNSAFE_CERT` | `false` | 忽略证书错误 |
 | `--prefer-ip-version` | `AGENT_PREFER_IP_VERSION` | 空 | 面板连接优先 4 或 6 |
-| `--month-rotate` | `AGENT_MONTH_ROTATE` | `0` | 流量重置日 |
+| `--month-rotate` | `AGENT_MONTH_ROTATE` | `0` | 每月流量重置日期；`0` 表示关闭 |
+| `--month-rotate-time` | `AGENT_MONTH_ROTATE_TIME` | 空 | 流量重置时间；空值按 `00:00:00` |
+| `--month-rotate-timezone` | `AGENT_MONTH_ROTATE_TIMEZONE` | 空 | IANA 时区；空值按 `Asia/Shanghai` |
 | `--gpu` | `AGENT_ENABLE_GPU` | `false` | 详细 GPU 上报 |
 
 命令行、环境变量和 JSON 配置文件均可设置。优先级从低到高为：默认值、JSON 配置文件、环境变量、明确传入的命令行参数。没有显式传入的命令行参数不会用默认值覆盖其他配置来源；部署工具仍应避免在多个来源重复设置同一字段。

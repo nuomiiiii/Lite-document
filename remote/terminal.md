@@ -6,7 +6,7 @@
 
 - 在 Lite“系统设置 → 通用”中开启“允许远程管理”。
 - Agent 在线，并在节点本地使用 `--enable-remote-control` 开启远程控制。
-- 使用配套 Lite-agent `2.3.3.3`。
+- 使用配套 Lite-agent `2.3.3.4`。
 - 管理员已经登录，并在进入远程页面时完成重新验证。
 - 反向代理支持 WebSocket。
 

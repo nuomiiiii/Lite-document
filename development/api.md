@@ -202,7 +202,9 @@ Lite `2.3.4` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权�
 | `traffic_limit_type` | string | `max`、`min`、`sum`、`up`、`down` |
 | `effective_traffic_limit` | number | 当前周期生效额度 |
 | `effective_traffic_type` | string | 当前周期生效统计方式 |
-| `traffic_reset_day` | number | 服务端流量重置日，缺失表示跟随 Agent |
+| `traffic_reset_day` | number | 服务端流量重置日期；缺失表示跟随 Agent，`0` 表示关闭 |
+| `traffic_reset_time` | string | 流量重置时间，格式为 `HH:MM:SS` |
+| `traffic_reset_timezone` | string | 流量重置使用的 IANA 时区 |
 | `created_at` | string | 创建时间 |
 | `updated_at` | string | 更新时间 |
 
@@ -372,11 +374,27 @@ socket.addEventListener("message", (event) => {
 - `common:getNodesLatestStatus`
 - `common:getRecords`
 
-`common:getNodes` 返回独立的主题节点结构。它保留 UUID、名称、硬件、地区、公开备注、分组、标签、带宽、账单和生效流量额度等展示字段，但始终排除 Agent 版本、私有备注、部署状态、远程协议与远程控制状态、流量重置内部字段以及 `created_at`、`updated_at`。该规则对匿名和管理员调用都生效。
+`common:getNodes` 返回独立的主题节点结构。它保留 UUID、名称、硬件、地区、公开备注、分组、标签、带宽、账单和生效流量额度等展示字段。启用流量重置时，还会返回 `traffic_reset_day`、`traffic_reset_time`、`traffic_reset_timezone` 和带偏移量的 RFC3339 `traffic_reset_at`；后者表示下一次重置时刻，主题应优先使用它展示倒计时或具体时间。
+
+该结构始终排除 Agent 版本、私有备注、部署状态、远程协议与远程控制状态、重置流量追加额度、内部周期标记以及 `created_at`、`updated_at`。该规则对匿名和管理员调用都生效。
 
 匿名调用仍会过滤隐藏节点，并按访客 IP 设置返回脱敏地址或不返回地址。`/api/nodes` 作为兼容 HTTP 接口维持原结构，调用方不要假设它与 `common:getNodes` 字段完全相同。
 
 `admin:*` 方法会随后台能力演进。外部自动化应只调用经过验证的具体方法，并固定兼容版本，不要把后台路由列表当作永久稳定 SDK。
+
+### 管理日志查询
+
+`GET /api/admin/logs` 支持以下查询参数：
+
+| 参数 | 说明 |
+| --- | --- |
+| `limit` | 每页条数，默认 `100` |
+| `page` | 从 `1` 开始的页码 |
+| `q` | 在 IP 和日志内容中模糊搜索 |
+| `msg_type` | 以逗号分隔的日志类型，可同时筛选多个 |
+| `day` | 以逗号分隔的 UTC 日期，格式为 `YYYY-MM-DD` |
+
+响应的 `data` 包含 `logs`、`total`、`types` 和 `days`。`types`、`days` 是全部日志的可选筛选项及记录数，不受当前分页限制；管理后台据此显示组合筛选。
 
 成本中心管理方法包括 `admin:getBillingOverview`、`admin:getBillingServers`、`admin:getBillingMonthly`、`admin:getBillingYearly`、`admin:getBillingEntries`、`admin:createBillingTrafficReset`、`admin:createBillingIPChange`、`admin:createBillingOneTimeFee` 和 `admin:voidBillingEntry`。这些方法需要管理员权限，属于随后台演进的管理接口，不是匿名主题 API。
 

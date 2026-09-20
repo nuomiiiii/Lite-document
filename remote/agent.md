@@ -10,7 +10,7 @@ Agent 负责采集服务器状态、执行探测并在管理员授权后提供�
 
 安装、服务状态、日志、更新、重启和卸载命令统一见 [Agent 安装与维护](/install/agent)。
 
-请使用[版本与功能范围](/guide/versioning)中列出的配套 Lite-agent `2.3.3.3`。当前版本仅使用协议 2，支持 MCP 完整管理，并保留远程执行去重、Lite 安装目录迁移和断线重连。只支持旧协议的 Agent 无法继续接入，应先升级。
+请使用[版本与功能范围](/guide/versioning)中列出的配套 Lite-agent `2.3.3.4`。当前版本仅使用协议 2，支持 MCP 完整管理和精确流量重置时间，并保留远程执行去重、Lite 安装目录迁移和断线重连。只支持旧协议的 Agent 无法继续接入，应先升级。
 
 ## JSON 配置
 
@@ -19,6 +19,9 @@ Agent 负责采集服务器状态、执行探测并在管理员授权后提供�
   "endpoint": "https://example.com",
   "token": "your-token",
   "interval": 3,
+  "month_rotate": 1,
+  "month_rotate_time": "00:00:00",
+  "month_rotate_timezone": "Asia/Shanghai",
   "disable_auto_update": false,
   "remote_control_enabled": false,
   "ignore_unsafe_cert": false
@@ -38,6 +41,9 @@ Agent 负责采集服务器状态、执行探测并在管理员授权后提供�
 | `--interval` | 服务器状态采集间隔，单位秒 |
 | `--include-nics` / `--exclude-nics` | 限定参与流量统计的网卡 |
 | `--include-mountpoint` | 限定参与统计的挂载点 |
+| `--month-rotate` | 每月流量重置日期；`0` 表示关闭，`1..31` 表示日期 |
+| `--month-rotate-time` | 流量重置时间，格式为 `HH:MM:SS` |
+| `--month-rotate-timezone` | 流量重置使用的 IANA 时区，如 `Asia/Shanghai` 或 `UTC` |
 | `--enable-remote-control` | 启用远程终端、文件、命令和 MCP；新安装默认关闭 |
 | `--prefer-ip-version` | 优先使用 IPv4 或 IPv6 |
 | `--custom-dns` | 指定 Agent 使用的 DNS |
@@ -45,7 +51,7 @@ Agent 负责采集服务器状态、执行探测并在管理员授权后提供�
 
 ## 配置保存与在线下发
 
-服务器列表中的 Agent 部署配置按节点保存在 Lite 服务端，不依赖当前浏览器。可在线修改的运行配置包括采集间隔、流量重置日、包含或排除网卡、包含挂载点、内存缓存计入方式和 GPU 监控。
+服务器列表中的 Agent 部署配置按节点保存在 Lite 服务端，不依赖当前浏览器。可在线修改的运行配置包括采集间隔、流量重置时区/日期/时间、包含或排除网卡、包含挂载点、内存缓存计入方式和 GPU 监控。
 
 操作流程如下：
 
@@ -74,9 +80,11 @@ Lite-agent 会在本地记录最近 24 小时、最多 256 条远程执行任务
 
 如果 Agent 在命令执行期间崩溃或被强制结束，重启后会向 Lite 报告“执行状态未知”，不会自行重新运行该命令。这里的 256 指任务记录条数，不是磁盘容量。
 
-## 流量重置日
+## 流量重置时间
 
-面板中的“流量重置日”同时用于服务器账单统计和 Agent 本地流量周期。通过“保存并下发”发送给在线 Agent 后，Agent 会确认是否已应用；离线 Agent 恢复连接后再应用最新变更，不会删除本地 `net_static.json` 中已经采集的流量。
+面板中的“流量重置时间”同时用于服务器账单统计、流量校准和 Agent 本地流量周期。按服务商账单选择 IANA 时区，填写每月日期和 `HH:MM:SS` 时间；日期 `0` 表示关闭，`1..31` 表示启用。日期超出当月天数时按当月最后一天计算。
+
+已有节点只设置了重置日时，Lite-agent `2.3.3.4` 会继续按 `Asia/Shanghai` 当天 `00:00:00` 重置。通过“保存并下发”发送给在线 Agent 后，Agent 会确认是否已应用；离线 Agent 恢复连接后再应用最新变更，不会删除本地 `net_static.json` 中已经采集的流量。
 
 ## Cloudflare Access
 
