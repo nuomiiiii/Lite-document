@@ -24,7 +24,7 @@
 
 ## Agent 在线，为什么不能授权 MCP？
 
-确认使用 Lite `2.3.3` 和 Lite-agent `2.3.3.0`，并同时开启站点“允许远程管理”“启用 MCP 代理”及 Agent 本地 `--enable-remote-control`。旧 Agent 可能仍能上报监控数据，但不具备 MCP 完整管理能力。操作步骤见[MCP 代理与 AI 授权](/remote/mcp)。
+确认使用 Lite `2.3.4` 和 Lite-agent `2.3.3.3`，并同时开启站点“允许远程管理”“启用 MCP 代理”及 Agent 本地 `--enable-remote-control`。旧 Agent 可能仍能上报监控数据，但不具备 MCP 完整管理能力。操作步骤见[MCP 代理与 AI 授权](/remote/mcp)。
 
 ## MCP 申请列表里没有客户端，或无法授权？
 

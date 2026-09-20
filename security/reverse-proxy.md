@@ -67,13 +67,74 @@ Nginx 位于宿主机时反代 `127.0.0.1:27777`。Nginx 位于另一个容器�
 
 Cloudflare Tunnel 管理位于“反向代理”下的独立页签。可在后台保存 Tunnel Token 并启动 `cloudflared`。Token 在服务端加密保存，前端只读取“是否已保存”，不会取回明文。
 
-非 Docker 部署需自行安装 `cloudflared`，或通过 `LITE_CLOUDFLARED_BIN` 指定路径。Docker 环境需确保镜像中包含可执行文件或另行运行 cloudflared 容器。
+Lite 的 Docker 镜像不再内置 `cloudflared`。使用后台 Tunnel 管理前，需要让 Lite 进程能够访问 `cloudflared` 可执行文件。
+
+### Linux 直装
+
+复制并执行下面一条命令。它会自动识别 `amd64` 或 `arm64`，从 cloudflared 官方 Release 下载到 `/usr/local/bin`，设置执行权限并显示版本：
+
+```bash
+ARCH="$(uname -m)"; case "$ARCH" in x86_64|amd64) CF_ARCH=amd64 ;; aarch64|arm64) CF_ARCH=arm64 ;; *) echo "不支持的架构: $ARCH" >&2; exit 1 ;; esac; curl -fL "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${CF_ARCH}" -o /tmp/cloudflared && sudo install -m 0755 /tmp/cloudflared /usr/local/bin/cloudflared && rm -f /tmp/cloudflared && /usr/local/bin/cloudflared --version
+```
+
+安装到 `/usr/local/bin/cloudflared` 后，Lite 可以直接找到它，无需另设路径。返回后台“反向代理 → Cloudflare Tunnel”，保存 Tunnel Token 并启动即可。此方式由 Lite 管理 cloudflared 进程，不需要再执行 `cloudflared service install`。
+
+安装到其他位置时，先把下方第一段路径改成实际位置，再整段复制执行。官方脚本安装的 Lite 服务名为 `lite`；使用自定义服务名时，把命令中的 `lite` 一并替换：
+
+```bash
+CLOUDFLARED_BIN=/完整路径/cloudflared; sudo test -x "$CLOUDFLARED_BIN" && sudo mkdir -p /etc/systemd/system/lite.service.d && printf '[Service]\nEnvironment="LITE_CLOUDFLARED_BIN=%s"\n' "$CLOUDFLARED_BIN" | sudo tee /etc/systemd/system/lite.service.d/cloudflared.conf >/dev/null && sudo systemctl daemon-reload && sudo systemctl restart lite && sudo systemctl status lite --no-pager
+```
+
+这条命令会先检查文件是否可执行，再创建 systemd 覆盖配置并重启 Lite。之后可以用 `sudo systemctl cat lite` 查看已经生效的 `LITE_CLOUDFLARED_BIN` 配置。
+
+### Docker：由 Lite 后台管理
+
+在 Lite 的 Compose 文件所在目录复制并执行下面一条命令，下载与主机架构匹配的 Linux 版二进制：
+
+```bash
+ARCH="$(uname -m)"; case "$ARCH" in x86_64|amd64) CF_ARCH=amd64 ;; aarch64|arm64) CF_ARCH=arm64 ;; *) echo "不支持的架构: $ARCH" >&2; exit 1 ;; esac; curl -fL "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${CF_ARCH}" -o cloudflared && chmod 755 cloudflared && ./cloudflared --version
+```
+
+在原 Lite 服务中增加只读挂载和环境变量，其他端口、数据目录及现有环境变量保持原样：
+
+```yaml
+services:
+  lite:
+    volumes:
+      - ./data:/app/data
+      - ./cloudflared:/usr/local/bin/cloudflared:ro
+    environment:
+      LITE_CLOUDFLARED_BIN: /usr/local/bin/cloudflared
+```
+
+执行 `docker compose up -d --force-recreate` 重建 Lite 容器，再到后台保存 Token 并启动 Tunnel。使用 `docker run` 时，同样在原命令中加入：
+
+```bash
+-v "$(pwd)/cloudflared:/usr/local/bin/cloudflared:ro" \
+-e LITE_CLOUDFLARED_BIN=/usr/local/bin/cloudflared
+```
+
+### Docker：独立 cloudflared 容器
+
+也可以让官方 cloudflared 容器独立运行。将它加入 Lite 所在的 Docker 网络，并在 Compose 项目使用的 `.env` 文件中填写 `TUNNEL_TOKEN`：
+
+```yaml
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    command: tunnel --no-autoupdate run
+```
+
+Cloudflare 中的源站服务地址应填写同一 Docker 网络内的 Lite 服务名和端口，例如 `http://lite:27777`，不能填写 cloudflared 容器自己的 `127.0.0.1`。这种方式由 Docker 管理 cloudflared，不要再从 Lite 后台启动或停止 Tunnel；查看状态和日志时使用 `docker compose ps cloudflared` 与 `docker compose logs cloudflared`。
 
 如果正在通过该 Tunnel 访问后台，停止 Tunnel 会立即断开当前页面，因此停止操作需要额外确认。
 
 ## Cloudflare Access
 
-为 Web 页面启用 Access 后，浏览器、Agent 与 MCP 客户端需要分别满足各自的访问策略。Lite `2.3.3` 使用以下连接路径：
+为 Web 页面启用 Access 后，浏览器、Agent 与 MCP 客户端需要分别满足各自的访问策略。Lite `2.3.4` 使用以下连接路径：
 
 | 用途 | 路径 | Access 配置 |
 | --- | --- | --- |

@@ -66,9 +66,33 @@ docker run -d \
 
 如果同一份数据库同时包含两套完整的上游指标布局，迁移会拒绝继续，避免误选源表。不要通过删除数据表来绕过检查。
 
+## 服务端迁移后迁移 Agent
+
+从上游 Komari 完成服务端和数据库迁移后，先确认原有节点记录仍在 Lite 后台，再到每台仍运行上游 `komari-agent` 的服务器执行 Agent 迁移。不要在 Lite 中重新添加节点，也不要重置或替换原节点 Token。
+
+主控地址没有变化时，在节点上执行下面一条命令：
+
+```bash
+curl -sL https://raw.githubusercontent.com/nuomiiiii/Lite-agent/main/migrate.sh | sudo bash
+```
+
+迁移脚本会读取原 `komari-agent` 的主控地址、Token 和启动参数，安装 Lite-agent，并在新服务成功启动后才卸载上游 Agent。完成后回到 Lite 后台，确认原节点恢复在线且历史数据仍归属于同一节点。
+
+主控地址已经变化、Windows 节点和 Docker Agent 的迁移方法见[从上游 komari-agent 迁移](/install/agent#从上游-komari-agent-迁移)。具体变更记录见 [Lite-agent 2.3.3.3 Release](https://github.com/nuomiiiii/Lite-agent/releases/tag/2.3.3.3)。
+
+## 升级到 Lite 2.3.4
+
+Lite `2.3.4` 推荐配套 Lite-agent `2.3.3.3`。更新后可在“账户与安全”中添加通行密钥、头像并设置全局自动登出时长；已有账号和密码不会被自动修改。准备使用通行密钥时，应先确认站点通过稳定的 HTTPS 域名访问，并保留密码或 SSO 等备用登录方式，因为通行密钥与注册时使用的域名绑定。
+
+仪表盘的平均时延、延迟抖动和近 15 分钟丢包改为按“服务器 + Ping 任务”分别展示，同一节点可能出现多条记录。重置节点 Token 后，旧 Token 最多保留 24 小时，新 Token 首次成功连接后会提前使旧 Token 失效；应在原节点直接执行新的部署指令，无需先卸载 Agent。
+
+Lite-agent `2.3.3.3` 提供从上游 `komari-agent` 接续原节点的专用迁移脚本。服务端迁移完成后按[服务端迁移后迁移 Agent](#服务端迁移后迁移-agent)处理，不要使用新节点的 Token 覆盖旧身份。此版本还会在压缩基础上报被拦截时自动回退，并降低运行时内存占用。
+
+Lite 的 Docker 镜像不再内置 `cloudflared`。继续使用后台 Cloudflare Tunnel 管理时，需要自行提供可执行文件或单独运行 cloudflared 容器，详见[反向代理与 Tunnel](/security/reverse-proxy#cloudflare-tunnel)。
+
 ## 升级到 Lite 2.3.3
 
-Lite `2.3.3` 只接受 Agent 协议 2，推荐配套 Lite-agent `2.3.3.0`。只支持旧协议的 Agent 在服务端更新后将无法继续上报；旧协议 2 Agent 即使仍能监控，也需要升级到配套版本才能使用 MCP 完整管理。
+Lite `2.3.3` 只接受 Agent 协议 2，推荐升级到当前 Lite-agent `2.3.3.3`。只支持旧协议的 Agent 在服务端更新后将无法继续上报；旧协议 2 Agent 即使仍能监控，也需要升级到配套版本才能使用 MCP 完整管理。
 
 从更早版本升级时，还需处理已下线的自动发现安装。新节点及 Docker 重建应使用后台为具体节点生成的普通部署命令。旧安装仍带 `--auto-discovery` 时，Lite-agent 只读取已有 `auto-discovery.json` 继续使用原节点身份；文件缺失、损坏或身份不完整时会停止启动，不会重新注册。更新前请按[旧自动发现安装迁移](/install/agent-ad)改用原节点的普通部署命令。
 

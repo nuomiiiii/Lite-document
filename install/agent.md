@@ -1,6 +1,6 @@
 # Agent 安装与维护
 
-当前已发布版本为 Lite-agent `2.3.3.0`，推荐配合 Lite `2.3.3` 使用。此版本支持 MCP 完整管理，与远程终端、文件管理和远程执行共用本地远程控制开关。Agent 使用独立更新源和 Lite 安装目录，并通过 WebSocket 心跳、读超时和快速重连降低进程运行但面板显示离线的概率。
+当前已发布版本为 Lite-agent `2.3.3.3`，推荐配合 Lite `2.3.4` 使用。此版本支持 MCP 完整管理和上游 Agent 迁移，遇到压缩基础上报被拦截时会自动回退，并优化了运行时内存占用；远程终端、文件管理、远程执行和 MCP 共用本地远程控制开关。
 
 本页覆盖 Agent 的安装、状态检查、日志、重启、更新和卸载。节点配置与在线下发见 [Agent 接入与配置](/remote/agent)，旧自动发现安装的处理方法见 [旧自动发现安装迁移](/install/agent-ad)。
 
@@ -35,13 +35,40 @@ sudo bash install-lite-agent.sh \
 
 安装脚本会识别 systemd、OpenRC、OpenWrt procd、macOS launchd 或 Upstart，并创建对应服务。新安装默认关闭远程控制；需要使用远程终端、文件管理、远程执行或 MCP 时，将最后一项改为 `--enable-remote-control`，并同时在 Lite 后台开启“允许远程管理”。使用 MCP 还需开启“启用 MCP 代理”，具体流程见[MCP 代理与 AI 授权](/remote/mcp)。
 
-脚本再次运行时会替换原服务和程序，适合更新或修改必须重装才能生效的安装参数。从旧 `komari-agent` 安装迁移时，会保留可识别的节点身份、历史自动发现身份文件、流量状态、配置和原有远程控制状态。
+脚本再次运行时会替换原 Lite-agent 服务和程序，适合更新或修改必须重装才能生效的安装参数。从上游 `komari-agent` 接续原节点时，请使用下方专用迁移脚本。
 
 FreeBSD 请从 [Agent Releases](https://github.com/nuomiiiii/Lite-agent/releases) 下载对应架构的二进制，按 [JSON 配置](/remote/agent#json-配置)启动，并自行配置系统服务。当前脚本不会自动创建 FreeBSD 原生 rc.d 服务。
 
 ::: danger 保护节点凭据
 Cloudflare Access Service Token、完整安装命令和历史身份文件都属于敏感信息。不要把它们或服务启动参数、日志原样贴到公开工单。
 :::
+
+### 从上游 komari-agent 迁移
+
+如果已经完成从上游 Komari 到 Lite 的服务端迁移，并且原有节点记录仍保留在 Lite 后台，可在每台仍运行上游 `komari-agent` 的服务器上使用专用迁移脚本接续原节点。不要重新添加节点或生成新 Token。
+
+脚本会保留原面板地址、Token 和启动参数，安装 Lite-agent，并在新服务成功启动后才卸载旧服务。具体变更记录见 [Lite-agent 2.3.3.3 Release](https://github.com/nuomiiiii/Lite-agent/releases/tag/2.3.3.3)。
+
+Linux 上主控地址不变时执行：
+
+```bash
+curl -sL https://raw.githubusercontent.com/nuomiiiii/Lite-agent/main/migrate.sh | sudo bash
+```
+
+主控改为新地址时执行：
+
+```bash
+curl -sL https://raw.githubusercontent.com/nuomiiiii/Lite-agent/main/migrate.sh | sudo bash -s -- \
+  --endpoint "https://lite.example.com"
+```
+
+Windows 上在管理员 PowerShell 中执行：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "iwr https://raw.githubusercontent.com/nuomiiiii/Lite-agent/main/migrate.ps1 -UseBasicParsing -OutFile 'migrate.ps1'; & .\migrate.ps1"
+```
+
+迁移时不要传入新的 `--token`，也不要修改安装目录或服务名。Docker 不运行迁移脚本，应保留原来的 endpoint 和 Token 参数，直接重建为 Lite-agent 容器。
 
 ### Docker
 
@@ -54,7 +81,7 @@ docker pull ghcr.io/nuomiiiii/lite-agent:latest
 需要固定当前正式版时使用：
 
 ```bash
-docker pull ghcr.io/nuomiiiii/lite-agent:2.3.3.0
+docker pull ghcr.io/nuomiiiii/lite-agent:2.3.3.3
 ```
 
 镜像地址必须使用小写 `lite-agent`；如果后台生成的命令中仍是 `Lite-agent`，请先改为上述小写地址，否则 Docker 会拒绝执行。

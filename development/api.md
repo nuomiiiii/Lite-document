@@ -33,16 +33,21 @@ Lite 同时保留兼容 HTTP API，并提供 JSON-RPC 2.0 入口。新主题和�
 | --- | --- |
 | 下载备份或配置包 | `GET /api/admin/download/backup` |
 | 分段上传、合并或取消上传 | `/api/admin/upload/*` |
-| 修改账号信息 | `POST /api/admin/update/user` |
-| 主题管理与主题市场操作，包括读取列表 | `/api/admin/theme/*` |
-| 读取或重置节点 Token | `GET /api/admin/client/{uuid}/token`、`POST /api/admin/client/token/rotate`；RPC `admin:getClientToken`、`admin:rotateClientToken` |
-| 修改自定义 HTML 或切换当前主题 | `POST /api/admin/settings/` 或 RPC `admin:editSettings` 中的 `custom_head`、`custom_body`、`theme` 字段 |
+| 修改管理员用户名或密码 | `POST /api/admin/update/user` |
+| 读取、上传或删除账号头像 | `/api/admin/account/avatar*` |
+| 查看、添加、重命名或删除通行密钥 | `/api/admin/account/passkeys*` |
+| 生成、启用或关闭 2FA | `/api/admin/2fa/*` |
+| 绑定、确认或解绑 SSO 账号 | `/api/admin/oauth2/*` |
+| 修改登录方式和 OIDC 提供方 | RPC `admin:editSettings` 中的 `disable_password_login`、`oauth_enabled`、`oauth_provider` 字段，以及 `admin:setOidcProvider` |
+| 查看主题管理列表，安装、更新、配置、删除或切换主题 | `/api/admin/theme/*`；RPC `admin:editSettings` 中的 `theme` 字段 |
+| 查看或重置节点 Token | `GET /api/admin/client/{uuid}/token`、`POST /api/admin/client/token/rotate`；RPC `admin:getClientToken`、`admin:rotateClientToken` |
+| 修改自定义 HTML | RPC `admin:editSettings` 中的 `custom_head`、`custom_body` 字段 |
 
-上述请求被拒绝时，备份、上传、账号、主题和节点 Token 的 HTTP 接口返回 `403`，设置 HTTP 接口当前返回 `401`；直接调用对应 RPC 方法会返回权限不足错误 `-32041`。附带 2FA 验证码也不能代替管理员登录会话。
+上述请求被拒绝时，备份、上传、账号、主题和节点 Token 的 HTTP 接口返回 `403`，设置 HTTP 接口当前返回 `401`；直接调用对应 RPC 方法会返回权限不足错误 `-32041`。附带管理员密码或 2FA 验证码也不能把 API Key 变成管理员登录会话。
 
 通过设置接口更新其他选项时，应只提交需要修改的字段；只要请求包含上述受限字段，即使值未变化，也会被拒绝。
 
-API Key 同样不能签发或使用远程管理、MCP 授权。外部脚本应按具体接口核对支持范围，不要将 API Key 视为可调用全部后台接口的管理员登录凭据。
+服务器列表和服务器详情接口不会向 API Key 返回节点 Token；获取部署凭据必须使用管理员登录会话并完成页面要求的验证。API Key 同样不能签发或使用远程管理、MCP 授权。外部脚本应按具体接口核对支持范围，不要将 API Key 视为可调用全部后台接口的管理员登录凭据。
 
 ### 敏感操作与 2FA
 
@@ -58,7 +63,7 @@ API Key 不能签发或使用远程授权。
 
 ### MCP 接入
 
-Lite `2.3.3` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权选择节点和有效期后，可以调用命令、交互终端和文件工具；它不获得 `admin:*` 或 Agent 身份。站点 API Key、Agent Token 和浏览器远程授权均不能用于此入口。
+Lite `2.3.4` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权选择节点和有效期后，可以调用命令、交互终端和文件工具；它不获得 `admin:*` 或 Agent 身份。站点 API Key、Agent Token 和浏览器远程授权均不能用于此入口。
 
 客户端应通过 MCP 的工具发现读取当前可用工具与参数，不要把 MCP 请求发送到 `/api/rpc2`。接入、期限、并发限制、操作记录和撤销方式见[MCP 代理与 AI 授权](/remote/mcp)，代理所需路径见[反向代理与 Tunnel](/security/reverse-proxy#cloudflare-access)。
 
@@ -148,7 +153,7 @@ Lite `2.3.3` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权�
   "status": "success",
   "message": "",
   "data": {
-    "version": "2.3.3",
+    "version": "2.3.4",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }
@@ -307,7 +312,7 @@ socket.addEventListener("message", (event) => {
   "jsonrpc": "2.0",
   "id": "version-1",
   "result": {
-    "version": "2.3.3",
+    "version": "2.3.4",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }

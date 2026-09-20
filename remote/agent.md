@@ -10,7 +10,7 @@ Agent 负责采集服务器状态、执行探测并在管理员授权后提供�
 
 安装、服务状态、日志、更新、重启和卸载命令统一见 [Agent 安装与维护](/install/agent)。
 
-请使用[版本与功能范围](/guide/versioning)中列出的配套 Lite-agent `2.3.3.0`。当前版本仅使用协议 2，支持 MCP 完整管理，并保留远程执行去重、Lite 安装目录迁移和断线重连。只支持旧协议的 Agent 无法继续接入，应先升级。
+请使用[版本与功能范围](/guide/versioning)中列出的配套 Lite-agent `2.3.3.3`。当前版本仅使用协议 2，支持 MCP 完整管理，并保留远程执行去重、Lite 安装目录迁移和断线重连。只支持旧协议的 Agent 无法继续接入，应先升级。
 
 ## JSON 配置
 
@@ -64,7 +64,7 @@ Agent 会上报当前生效配置。Lite 仅使用上报内容初始化尚未保
 
 ## 从旧 Agent 迁移
 
-当前 Lite-agent 安装脚本会识别旧 `komari-agent` 服务和目录，迁移节点身份、历史自动发现身份文件、流量状态、配置和远程控制状态，并在新服务确认运行后退役旧服务。旧配置中的 `disable_web_ssh` 会自动转换为 `remote_control_enabled`；新配置只应使用正向开关。迁移前仍应记录原安装参数并备份 Agent 目录。
+完成从上游 Komari 到 Lite 的服务端迁移后，可在仍运行 `komari-agent` 的原节点上执行 Lite-agent 专用迁移脚本。它会保留原 endpoint、Token 和启动参数，并在新服务成功启动后才卸载旧服务；不要改用新节点部署命令，也不要给迁移脚本传入新的 Token。Linux、Windows 与 Docker 的具体做法见[从上游 komari-agent 迁移](/install/agent#从上游-komari-agent-迁移)。
 
 Lite 已经停止自动发现注册，新节点必须先在后台添加，再使用各自的普通部署命令。旧自动发现安装的保留条件和迁移步骤见[旧自动发现安装迁移](/install/agent-ad)。
 
