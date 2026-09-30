@@ -1,6 +1,6 @@
 # Agent 安装与维护
 
-当前已发布版本为 Lite-agent `2.3.3.4`，推荐配合 Lite `2.3.4` 使用。此版本支持按时区、日期和时分秒重置流量，并包含 MCP 完整管理、上游 Agent 迁移、HTTP 压缩回退及运行时内存优化；远程终端、文件管理、远程执行和 MCP 共用本地远程控制开关。
+当前配套版本为 Lite-agent `2.3.3.7`，推荐配合 Lite `2.3.6` 使用。此版本支持按时区、日期和时分秒重置流量，并包含 MCP 完整管理、上游 Agent 迁移、HTTP 压缩回退及运行时内存优化；远程终端、文件管理、远程执行和 MCP 共用本地远程控制开关。Windows 开启远程控制后不再弹出桌面提示；Windows 安装脚本修复了服务状态误报和误提 `komari-agent` 的问题。
 
 本页覆盖 Agent 的安装、状态检查、日志、重启、更新和卸载。节点配置与在线下发见 [Agent 接入与配置](/remote/agent)，旧自动发现安装的处理方法见 [旧自动发现安装迁移](/install/agent-ad)。
 
@@ -47,7 +47,7 @@ Cloudflare Access Service Token、完整安装命令和历史身份文件都属�
 
 如果已经完成从上游 Komari 到 Lite 的服务端迁移，并且原有节点记录仍保留在 Lite 后台，可在每台仍运行上游 `komari-agent` 的服务器上使用专用迁移脚本接续原节点。不要重新添加节点或生成新 Token。
 
-脚本会保留原面板地址、Token 和启动参数，安装 Lite-agent，并在新服务成功启动后才卸载旧服务。具体变更记录见 [Lite-agent 2.3.3.4 Release](https://github.com/nuomiiiii/Lite-agent/releases/tag/2.3.3.4)。
+脚本会保留原面板地址、Token 和启动参数，安装 Lite-agent，并在新服务成功启动后才卸载旧服务。具体变更记录见 [Lite-agent 2.3.3.7 Release](https://github.com/nuomiiiii/Lite-agent/releases/tag/2.3.3.7)。
 
 Linux 上主控地址不变时执行：
 
@@ -81,7 +81,7 @@ docker pull ghcr.io/nuomiiiii/lite-agent:latest
 需要固定当前正式版时使用：
 
 ```bash
-docker pull ghcr.io/nuomiiiii/lite-agent:2.3.3.4
+docker pull ghcr.io/nuomiiiii/lite-agent:2.3.3.7
 ```
 
 镜像地址必须使用小写 `lite-agent`；如果后台生成的命令中仍是 `Lite-agent`，请先改为上述小写地址，否则 Docker 会拒绝执行。

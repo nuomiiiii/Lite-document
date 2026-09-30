@@ -3,7 +3,7 @@
 本页描述 Lite 服务端与 `nuomiiiii/Lite-agent` 当前实际使用的线协议，供第三方 Agent 和采集器开发。它不是对上游协议的兼容承诺。
 
 ::: info Agent 口径
-本文以已发布的 Lite `2.3.4` 和 Lite-agent `2.3.3.4` 为实现基线。当前只支持协议 2，不保留 V1 端点、旧远程终端消息或自动降级。
+本文以 Lite `2.3.6` 和 Lite-agent `2.3.3.7` 为实现基线。当前只支持协议 2，不保留 V1 端点、旧远程终端消息或自动降级。
 :::
 
 ::: danger 安全边界
@@ -226,7 +226,7 @@ GPU 明细：
       "disk_total": 53687091200,
       "gpu_name": "None",
       "virtualization": "kvm",
-      "version": "2.3.3.4",
+      "version": "2.3.3.7",
       "remote_protocol": 2,
       "remote_control_enabled": false
     }

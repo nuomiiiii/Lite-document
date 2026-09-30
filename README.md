@@ -25,7 +25,7 @@ GitHub Pages 构建会根据当前 Pages 域名自动设置资源基础路径；
 
 ## 内容口径
 
-- 当前内容以已发布的 Lite `2.3.4`、Lite-agent `2.3.3.4` 和 Lite-Theme `1.1.2` 为基线。
+- 当前内容按 Lite `2.3.6`、Lite-agent `2.3.3.7` 和 Lite-Theme `1.2.2` 编写；Lite `2.3.6` 的发布状态以项目发布页为准。
 - 与上游行为一致的功能会明确写明一致；仅兼容数据或接口的功能会注明兼容范围；Lite 差异会单独标注。
 - 当前配套 Agent 使用独立的 [`nuomiiiii/Lite-agent`](https://github.com/nuomiiiii/Lite-agent) 仓库、`Lite-agent` 二进制和更新源。
 - Agent 页面覆盖安装、状态、日志、更新、重启、卸载和凭据保留，不再只提供安装命令。

@@ -40,14 +40,44 @@ Lite 同时保留兼容 HTTP API，并提供 JSON-RPC 2.0 入口。新主题和�
 | 绑定、确认或解绑 SSO 账号 | `/api/admin/oauth2/*` |
 | 修改登录方式和 OIDC 提供方 | RPC `admin:editSettings` 中的 `disable_password_login`、`oauth_enabled`、`oauth_provider` 字段，以及 `admin:setOidcProvider` |
 | 查看主题管理列表，安装、更新、配置、删除或切换主题 | `/api/admin/theme/*`；RPC `admin:editSettings` 中的 `theme` 字段 |
-| 查看或重置节点 Token | `GET /api/admin/client/{uuid}/token`、`POST /api/admin/client/token/rotate`；RPC `admin:getClientToken`、`admin:rotateClientToken` |
 | 修改自定义 HTML | RPC `admin:editSettings` 中的 `custom_head`、`custom_body` 字段 |
 
-上述请求被拒绝时，备份、上传、账号、主题和节点 Token 的 HTTP 接口返回 `403`，设置 HTTP 接口当前返回 `401`；直接调用对应 RPC 方法会返回权限不足错误 `-32041`。附带管理员密码或 2FA 验证码也不能把 API Key 变成管理员登录会话。
+上述请求被拒绝时，备份、上传、账号和主题的 HTTP 接口返回 `403`，设置 HTTP 接口当前返回 `401`；直接调用对应 RPC 方法会返回权限不足错误 `-32041`。附带管理员密码或 2FA 验证码也不能把 API Key 变成管理员登录会话。
 
 通过设置接口更新其他选项时，应只提交需要修改的字段；只要请求包含上述受限字段，即使值未变化，也会被拒绝。
 
 服务器列表和服务器详情接口不会向 API Key 返回节点 Token；获取部署凭据必须使用管理员登录会话并完成页面要求的验证。API Key 同样不能签发或使用远程管理、MCP 授权。外部脚本应按具体接口核对支持范围，不要将 API Key 视为可调用全部后台接口的管理员登录凭据。
+
+### API Key 可调用接口
+
+API Key 不是只读凭证。使用下面的请求头调用 API：
+
+```http
+Authorization: Bearer <api-key>
+```
+
+公开接口不要求 API Key；带上 API Key 也不会获得额外的公开字段。需要管理权限的请求可以调用对应的 `/api/admin/*` HTTP 路由，或通过 `POST /api/rpc2` 调用允许的 `admin:*` 方法。常用可调用范围如下：
+
+| 范围 | 常用接口或方法 | 说明 |
+| --- | --- | --- |
+| 公开数据 | `/api/public`、`/api/nodes`、`/api/recent/{uuid}`、`public:*`、`common:*` | 访客即可调用，不需要 API Key |
+| 仪表盘与账单 | `/api/admin/dashboard*`、`/api/admin/billing/*`；对应 `admin:getDashboard*`、`admin:getBilling*` | 查询仪表盘、费用、账单记录和统计 |
+| 节点资料与配置 | `/api/admin/client/list`、`/api/admin/client/{uuid}`、`/api/admin/client/add`、`/api/admin/client/{uuid}/edit`、`/api/admin/client/{uuid}/remove`、`/api/admin/client/order` | 可读取和维护节点资料；列表和详情不返回已有节点 Token，创建新节点时会返回新节点初始 Token |
+| 部署与流量 | `/api/admin/client/{uuid}/deployment-profile`、`/api/admin/client/{uuid}/traffic-daily`、`/api/admin/client/{uuid}/billing/*`；对应 `admin:getClientDeploymentProfile`、`admin:saveClientDeploymentProfile` 等方法 | 可读取部署配置、流量数据和账单操作 |
+| 通知与监测 | `/api/admin/notification/*`、`/api/admin/ping/*`、`/api/admin/return-route/*`；对应 `admin:*` 方法 | 可查询、配置通知规则、Ping 任务和回程线路 |
+| 日志与维护 | `/api/admin/logs`、`/api/admin/database/size`、`/api/admin/database/vacuum`、`/api/admin/clipboard/*`、`/api/admin/session/*` | 可查询日志、维护数据库空间、管理命令剪贴板和会话 |
+| 非敏感设置 | `GET /api/admin/settings/*`、非敏感的 `POST /api/admin/settings/`；对应 `admin:getSettings`、`admin:setDashboardSettings`、`admin:setXtermjsSettings` 等方法 | `admin:editSettings` 只能提交未列入限制表的字段；OIDC 提供方写入仍需管理员登录会话 |
+
+例如，使用 API Key 查询仪表盘：
+
+```bash
+curl -X POST "https://monitor.example.com/api/rpc2" \
+  -H "Authorization: Bearer <api-key>" \
+  -H "Content-Type: application/json" \
+  --data '{"jsonrpc":"2.0","id":1,"method":"admin:getDashboard","params":{}}'
+```
+
+`admin:exec`、远程管理授权、MCP 授权、查看或重置已有节点 Token、备份、账号安全、主题管理和受限设置字段不属于 API Key 可用范围；具体拒绝项见上一节。调用未列出的 `admin:*` 方法前，应以当前版本的接口权限返回为准，不要据此假设 API Key 等同于管理员登录会话。
 
 ### 敏感操作与 2FA
 
@@ -63,7 +93,7 @@ API Key 不能签发或使用远程授权。
 
 ### MCP 接入
 
-Lite `2.3.4` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权选择节点和有效期后，可以调用命令、交互终端和文件工具；它不获得 `admin:*` 或 Agent 身份。站点 API Key、Agent Token 和浏览器远程授权均不能用于此入口。
+Lite `2.3.6` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权选择节点和有效期后，可以调用命令、交互终端和文件工具；它不获得 `admin:*` 或 Agent 身份。站点 API Key、Agent Token 和浏览器远程授权均不能用于此入口。
 
 客户端应通过 MCP 的工具发现读取当前可用工具与参数，不要把 MCP 请求发送到 `/api/rpc2`。接入、期限、并发限制、操作记录和撤销方式见[MCP 代理与 AI 授权](/remote/mcp)，代理所需路径见[反向代理与 Tunnel](/security/reverse-proxy#cloudflare-access)。
 
@@ -153,7 +183,7 @@ Lite `2.3.4` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权�
   "status": "success",
   "message": "",
   "data": {
-    "version": "2.3.4",
+    "version": "2.3.6",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }
@@ -197,7 +227,8 @@ Lite `2.3.4` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权�
 | `currency` | string | 货币符号 |
 | `billing_cycle` | number | 计费周期，天 |
 | `auto_renewal` | boolean | 是否自动续费 |
-| `expired_at` | string \| null | 到期时间 |
+| `expired_at` | string \| null | 到期瞬间，带时区的 RFC3339 |
+| `expiry_timezone` | string | 编辑和展示用的 IANA 时区，缺省为 `Asia/Shanghai` |
 | `traffic_limit` | number | 配置流量额度 |
 | `traffic_limit_type` | string | `max`、`min`、`sum`、`up`、`down` |
 | `effective_traffic_limit` | number | 当前周期生效额度 |
@@ -240,36 +271,6 @@ Lite `2.3.4` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权�
 ```
 
 `gpu` 为可选对象，详细结构见 [Agent RFC](/development/agent-rfc#实时上报字段)。流量累计值已经过当前周期校准，主题不要再次修正。
-
-### 旧版负载历史
-
-`GET /api/records/load?uuid={uuid}&hours=4&load_type=all`
-
-`uuid` 必填。`load_type` 支持：`cpu`、`gpu`、`ram`、`swap`、`load`、`temp`、`disk`、`network`、`process`、`connections`、`all`。
-
-返回扁平化兼容记录，例如 `cpu`、`ram`、`ram_total`、`net_in`、`net_out`、`net_total_up`、`net_total_down`。这与实时接口的嵌套结构不同。
-
-::: tip 新开发建议
-48 小时、多节点或多指标查询优先使用 `public:queryMetrics`。它默认降采样到约 500 点，更适合图表展示。
-:::
-
-### 旧版 Ping 历史
-
-`GET /api/records/ping?uuid={uuid}&task_id={id}&hours=4`
-
-`uuid` 和 `task_id` 至少提供一个。返回：
-
-- `records[]`：`task_id`、`time`、`value`、`client`；`value=-1` 表示丢包。
-- `basic_info[]`：按节点聚合的 `loss`、`min`、`max`。
-- `tasks[]`：相关任务及 `avg`、`total` 等统计。
-
-该接口不会主动限制返回点数。较长时间范围应使用 `public:getPingMetricStats` 或 `public:queryMetrics`。
-
-### 公开 Ping 任务
-
-`GET /api/task/ping`
-
-字段包括 `id`、`name`、`clients`、`default_on`、`type`、`interval`、`weight`。
 
 ### 实时状态 WebSocket
 
@@ -314,7 +315,7 @@ socket.addEventListener("message", (event) => {
   "jsonrpc": "2.0",
   "id": "version-1",
   "result": {
-    "version": "2.3.4",
+    "version": "2.3.6",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }
@@ -364,9 +365,6 @@ socket.addEventListener("message", (event) => {
 - `public:getPublicSettings`
 - `public:getVersion`
 - `public:getClientRecentRecords`
-- `public:getRecordsByUUID`
-- `public:getPingRecords`
-- `public:getPublicPingTasks`
 - `public:listMetricDefinitions`
 - `public:queryMetrics`
 - `public:getPingMetricStats`
@@ -374,7 +372,53 @@ socket.addEventListener("message", (event) => {
 - `common:getNodesLatestStatus`
 - `common:getRecords`
 
-`common:getNodes` 返回独立的主题节点结构。它保留 UUID、名称、硬件、地区、公开备注、分组、标签、带宽、账单和生效流量额度等展示字段。启用流量重置时，还会返回 `traffic_reset_day`、`traffic_reset_time`、`traffic_reset_timezone` 和带偏移量的 RFC3339 `traffic_reset_at`；后者表示下一次重置时刻，主题应优先使用它展示倒计时或具体时间。
+`common:getNodes` 返回独立的主题节点数组。每个节点对象包含以下字段：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `uuid` | string | 节点 UUID |
+| `name` | string | 节点名称 |
+| `cpu_name` | string | CPU 型号 |
+| `virtualization` | string | 虚拟化类型 |
+| `arch` | string | 系统架构 |
+| `cpu_cores` | number | 逻辑核心数 |
+| `cpu_physical_cores` | number | 物理核心数，`0` 表示未知 |
+| `os` | string | 操作系统 |
+| `kernel_version` | string | 内核版本 |
+| `gpu_name` | string | GPU 摘要 |
+| `ipv4` | string | IPv4 地址；根据站点访客 IP 设置可能省略或脱敏 |
+| `ipv6` | string | IPv6 地址；根据站点访客 IP 设置可能省略或脱敏 |
+| `region` | string | 地区展示值 |
+| `region_override` | string | 手动地区代码，未设置时为空 |
+| `public_remark` | string | 公开备注 |
+| `mem_total` | number | 总内存，字节 |
+| `swap_total` | number | 总 Swap，字节 |
+| `disk_total` | number | 总磁盘，字节 |
+| `weight` | number | 排序权重 |
+| `price` | number | 当前资费价格；`-1` 常表示免费 |
+| `billing_cycle` | number | 计费周期，天 |
+| `auto_renewal` | boolean | 是否自动续费 |
+| `currency` | string | 当前资费原币种 |
+| `expired_at` | string \| null | 到期瞬间，带时区的 RFC3339 |
+| `expiry_timezone` | string | 编辑和展示用的 IANA 时区，缺省为 `Asia/Shanghai` |
+| `group` | string | 分组 |
+| `tags` | string | 以分号分隔的标签 |
+| `bandwidth` | string | 管理员填写的线路带宽文案，未填写时为空字符串 |
+| `hidden` | boolean | 是否对访客隐藏；匿名响应只包含可见节点 |
+| `traffic_limit` | number | 当前周期配置的流量额度 |
+| `traffic_limit_type` | string | `max`、`min`、`sum`、`up`、`down` |
+| `traffic_reset_day` | number | 下一次流量重置日期；未启用时可能为 `0` 或省略 |
+| `traffic_reset_time` | string | 流量重置时间，格式为 `HH:MM:SS` |
+| `traffic_reset_timezone` | string | 流量重置使用的 IANA 时区 |
+| `traffic_reset_at` | string | 下一次重置时刻，带偏移量的 RFC3339；未启用时省略 |
+| `effective_traffic_limit` | number | 当前周期实际生效的流量额度 |
+| `effective_traffic_type` | string | 当前周期实际生效的统计方式 |
+| `remaining_value` | string | 有限资费的估算剩余价值，十进制字符串；无可计算值时省略 |
+| `remaining_value_currency` | string | `remaining_value` 使用的节点资费原币种；无 `remaining_value` 时省略 |
+
+剩余天数按到期瞬间向上取整，主题和大屏继续显示“余 X 天”，不要改成小时。`remaining_value` 使用节点当前资费版本的原币种，不是后台展示用的折算币种；内置大屏或其他公开展示端可以使用这两个字段，公开主题仍应以权威 `expired_at` 计算剩余天数。
+
+`public:getMe` 在已登录且设置了自定义头像时返回字符串 `avatar_url`，值为 `/api/admin/account/avatar/{version}`。已登录但没有自定义头像时，该字段仍会出现，值为空字符串。访客调用返回 `logged_in: false`，并且省略 `avatar_url`。
 
 该结构始终排除 Agent 版本、私有备注、部署状态、远程协议与远程控制状态、重置流量追加额度、内部周期标记以及 `created_at`、`updated_at`。该规则对匿名和管理员调用都生效。
 

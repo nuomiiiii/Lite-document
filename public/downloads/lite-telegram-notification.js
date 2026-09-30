@@ -1,6 +1,6 @@
-const TG_TOKEN   = "tg token";
-const TG_CHAT_ID = "tg id";
-const PANEL_URL  = "Lite web";
+const TG_TOKEN   = "";
+const TG_CHAT_ID = "";
+const PANEL_URL  = "";
 const PHOTO_URL  = "https://img.uppic.to/2026/08/27/lite-telegram-banner.png";
 const SEND_BRAND_IMAGE = true;
 const TIME_ZONE_OFFSET = 8;
@@ -56,6 +56,7 @@ function eventRecovered(event) {
 function normalizeEventName(value) {
   const name = String(value || "Unknown");
   if (["CPU", "MEM", "RAM", "Disk", "Load"].includes(name)) return EVENT.ALERT;
+  if (name === EVENT.PING_LOSS || name.indexOf(EVENT.PING_LOSS + " · ") === 0) return EVENT.PING_LOSS;
   return name;
 }
 
@@ -209,12 +210,9 @@ function resolveTarget(event, profile) {
   const manyClients = asArray(event && event.clients).length > 1;
 
   if (profile.name === EVENT.PING_LOSS) {
-    const query = uuid
-      ? "?node=" + uuid + (profile.recovered ? "" : "&state=active")
-      : profile.recovered ? "" : "?state=active";
     return {
-      label: profile.recovered ? "查看延迟监测" : "查看延迟告警",
-      path: "/admin/notification/ping-loss" + query,
+      label: "查看网络监测",
+      path: uuid ? "/server/" + uuid + "?view=network" : "/",
     };
   }
 
@@ -511,8 +509,6 @@ function splitTelegramMessage(html, limit) {
       return;
     }
 
-    // Never split in the middle of an HTML tag. Extremely large individual
-    // blocks lose styling, but keep their full readable content.
     const plain = block.replace(/<[^>]+>/g, "");
     for (let offset = 0; offset < plain.length; offset += maxLength) {
       chunks.push(escapeHtml(plain.slice(offset, offset + maxLength)));
@@ -544,8 +540,6 @@ async function sendTelegram(html, target) {
   const keyboard = buildKeyboard(target);
   const photo = String(PHOTO_URL || "").trim();
 
-  // Telegram limits photo captions to 1024 characters. Long reports stay as
-  // text so no report row is lost merely to keep the banner attached.
   if (SEND_BRAND_IMAGE && photo && html.length <= 1000) {
     const photoSent = await telegramRequest("sendPhoto", {
       chat_id: TG_CHAT_ID,
@@ -560,7 +554,6 @@ async function sendTelegram(html, target) {
   return sendTextMessages(html, keyboard);
 }
 
-// Lite requires this function for ordinary text notifications and test sends.
 globalThis.sendMessage = async function sendMessage(message, title) {
   const heading = String(title || "系统通知").trim();
   const html = [
@@ -571,7 +564,6 @@ globalThis.sendMessage = async function sendMessage(message, title) {
   return sendTelegram(html, { label: "打开管理后台", path: "/admin" });
 };
 
-// Lite calls this function for structured server events.
 globalThis.sendEvent = async function sendEvent(event) {
   try {
     const safeEvent = event || {};
