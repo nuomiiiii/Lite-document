@@ -60,6 +60,17 @@ function normalizeEventName(value) {
   return name;
 }
 
+function pingHealthTitle(event) {
+  const raw = String((event && event.message) || "");
+  const firstLine = raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)[0] || "";
+  const heading = firstLine.replace(/^[📡💬⚠️✅❌🛰️\s]+/u, "").trim();
+  if (heading) return heading;
+  return String((event && event.event) || "").trim() || "延迟监测告警";
+}
+
 function formatTime(value) {
   const source = value ? new Date(value) : new Date();
   const date = Number.isNaN(source.getTime()) ? new Date() : source;
@@ -181,7 +192,7 @@ function resolveProfile(event) {
     },
     [EVENT.PING_LOSS]: {
       icon: recovered ? "✅" : "📡",
-      title: recovered ? "延迟监测恢复" : "延迟监测异常",
+      title: pingHealthTitle(event),
     },
     [EVENT.RETURN_ROUTE]: {
       icon: recovered ? "✅" : "🛰️",
@@ -414,7 +425,12 @@ function renderDetails(event, profile) {
     return renderTrafficReport(event, profile);
   }
   if (profile.name === EVENT.PING_LOSS) {
-    const details = renderFields(raw, ["服务器"]);
+    const ignored = ["服务器"];
+    const heading = pingHealthTitle(event);
+    if (/延迟/.test(heading) && !/丢包/.test(heading)) {
+      ignored.push("允许下浮", "允许上浮", "成功样本");
+    }
+    const details = renderFields(raw, ignored);
     return details ? [details] : [];
   }
   if (profile.name === EVENT.RETURN_ROUTE) {
