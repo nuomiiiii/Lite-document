@@ -372,6 +372,7 @@ function renderTrafficReport(event, profile) {
   if (!raw) return [];
   const period = reportPeriodLabel(profile.name, raw);
   const pattern = /^(.+?)\s+(?:今日|昨日|本周|上周|本月|上月|上个月)流量[：:]\s*(.+)$/;
+  let serverCount = 0;
   const records = raw
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -379,6 +380,7 @@ function renderTrafficReport(event, profile) {
     .map((line) => {
       const match = line.match(pattern);
       if (!match) return escapeHtml(line);
+      serverCount += 1;
       const details = match[2]
         .split(/[，,]/)
         .map((part) => part.trim())
@@ -386,7 +388,7 @@ function renderTrafficReport(event, profile) {
         .map((part) => escapeHtml(part.replace(/\s+/g, " ")));
       return "<b>" + escapeHtml(match[1]) + "</b>\n" + details.join("\n");
     });
-  return ["<b>" + escapeHtml(period) + "用量</b> · " + records.length + " 台服务器", ...records];
+  return ["<b>" + escapeHtml(period) + "用量</b> · " + serverCount + " 台服务器", ...records];
 }
 
 function renderExpiryList(rawMessage) {
