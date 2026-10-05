@@ -78,21 +78,31 @@ curl -sL https://raw.githubusercontent.com/nuomiiiii/Lite-agent/main/migrate.sh 
 
 迁移脚本会读取原 `komari-agent` 的主控地址、Token 和启动参数，安装 Lite-agent，并在新服务成功启动后才卸载上游 Agent。完成后回到 Lite 后台，确认原节点恢复在线且历史数据仍归属于同一节点。
 
-主控地址已经变化、Windows 节点和 Docker Agent 的迁移方法见[从上游 komari-agent 迁移](/install/agent#从上游-komari-agent-迁移)。具体变更记录见 [Lite-agent 2.3.3.7 Release](https://github.com/nuomiiiii/Lite-agent/releases/tag/2.3.3.7)。
+主控地址已经变化、Windows 节点和 Docker Agent 的迁移方法见[从上游 komari-agent 迁移](/install/agent#从上游-komari-agent-迁移)。具体变更记录见 [Lite-agent 2.3.6.0 Release](https://github.com/nuomiiiii/Lite-agent/releases/tag/2.3.6.0)。
 
 ## 升级到 Lite 2.3.6
 
-Lite `2.3.6` 推荐配套 Lite-agent `2.3.3.7`。更新后可在“账户与安全”中添加通行密钥、头像并设置全局自动登出时长；已有账号和密码不会被自动修改。准备使用通行密钥时，应先确认站点通过稳定的 HTTPS 域名访问，并保留密码或 SSO 等备用登录方式，因为通行密钥与注册时使用的域名绑定。
+Lite `2.3.6` 推荐配套 Lite-agent `2.3.6.0`。更新后可在“账户与安全”中添加通行密钥、头像并设置全局自动登出时长；已有账号和密码不会被自动修改。准备使用通行密钥时，应先确认站点通过稳定的 HTTPS 域名访问，并保留密码或 SSO 等备用登录方式，因为通行密钥与注册时使用的域名绑定。
+
+Lite 版本仍为 `2.3.6`，本次功能更新需同时核对“关于”中的构建码。更新服务端及后台后，再更新节点 Agent，才能自动使用文件二进制传输和并行上传；仅更新 Agent 会保留原有传输方式。
+
+| 功能 | 更新后检查 |
+| --- | --- |
+| 通知渠道 | 原渠道会自动分配到各类事件；可改为按事件选择多个渠道，渠道参数与分配分别保存 |
+| 告警汇总推送 | 默认关闭，按需开启并设置 1–3600 秒的汇总时间，默认 5 秒 |
+| MCP 授权 | 既有授权仍为临时授权；长期授权需重新申请并明确勾选，临时最长时长可调至 72 小时 |
+| 续费日历 | 已有仪表盘配置会补入并开启，可调整位置、宽度或关闭 |
+| Lite-Theme | 更新到 `1.2.4` 后可配置每台节点的首页探测任务；手机端概览默认关闭 |
 
 仪表盘的平均时延、延迟抖动和近 15 分钟丢包改为按“服务器 + Ping 任务”分别展示，同一节点可能出现多条记录。重置节点 Token 后，旧 Token 最多保留 24 小时，新 Token 首次成功连接后会提前使旧 Token 失效；应在原节点直接执行新的部署指令，无需先卸载 Agent。
 
-Lite-agent `2.3.3.7` 提供从上游 `komari-agent` 接续原节点的专用迁移脚本。服务端迁移完成后按[服务端迁移后迁移 Agent](#服务端迁移后迁移-agent)处理，不要使用新节点的 Token 覆盖旧身份。此版本还会在压缩基础上报被拦截时自动回退、降低运行时内存占用，并支持由 Lite 下发流量重置的时区、日期和时分秒；Windows 开启远程控制后不再弹出桌面提示，安装脚本也修复了服务状态误报和误提 `komari-agent` 的问题。已有节点只设置了重置日时，升级后继续按 `Asia/Shanghai` 当天 `00:00:00` 重置。
+当前 Lite-agent 继续提供从上游 `komari-agent` 接续原节点的专用迁移脚本。服务端迁移完成后按[服务端迁移后迁移 Agent](#服务端迁移后迁移-agent)处理，不要使用新节点的 Token 覆盖旧身份。已有节点只设置了流量重置日时，升级后继续按 `Asia/Shanghai` 当天 `00:00:00` 重置；需要精确重置时，可由 Lite 下发时区、日期和时分秒。
 
 Lite 的 Docker 镜像不再内置 `cloudflared`。继续使用后台 Cloudflare Tunnel 管理时，需要自行提供可执行文件或单独运行 cloudflared 容器，详见[反向代理与 Tunnel](/security/reverse-proxy#cloudflare-tunnel)。
 
 ## Lite 2.3.3 以前的兼容提示
 
-Lite `2.3.3` 只接受 Agent 协议 2，推荐升级到当前 Lite-agent `2.3.3.7`。只支持旧协议的 Agent 在服务端更新后将无法继续上报；旧协议 2 Agent 即使仍能监控，也需要升级到配套版本才能使用 MCP 完整管理。
+Lite `2.3.3` 只接受 Agent 协议 2，推荐升级到当前 Lite-agent `2.3.6.0`。只支持旧协议的 Agent 在服务端更新后将无法继续上报；旧协议 2 Agent 即使仍能监控，也需要升级到配套版本才能使用 MCP 完整管理。
 
 从更早版本升级时，还需处理已下线的自动发现安装。新节点及 Docker 重建应使用后台为具体节点生成的普通部署命令。旧安装仍带 `--auto-discovery` 时，Lite-agent 只读取已有 `auto-discovery.json` 继续使用原节点身份；文件缺失、损坏或身份不完整时会停止启动，不会重新注册。更新前请按[旧自动发现安装迁移](/install/agent-ad)改用原节点的普通部署命令。
 

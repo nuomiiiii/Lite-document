@@ -3,7 +3,7 @@
 本页描述 Lite 服务端与 `nuomiiiii/Lite-agent` 当前实际使用的线协议，供第三方 Agent 和采集器开发。它不是对上游协议的兼容承诺。
 
 ::: info Agent 口径
-本文以 Lite `2.3.6` 和 Lite-agent `2.3.3.7` 为实现基线。当前只支持协议 2，不保留 V1 端点、旧远程终端消息或自动降级。
+本文以 Lite `2.3.6` 和 Lite-agent `2.3.6.0` 为实现基线。当前只支持协议 2，不保留 V1 端点、旧远程终端消息或自动降级。
 :::
 
 ::: danger 安全边界
@@ -226,7 +226,7 @@ GPU 明细：
       "disk_total": 53687091200,
       "gpu_name": "None",
       "virtualization": "kvm",
-      "version": "2.3.3.7",
+      "version": "2.3.6.0",
       "remote_protocol": 2,
       "remote_control_enabled": false
     }
@@ -477,6 +477,10 @@ X-Lite-Remote-Ticket: <ticket>
 ```
 
 该独立 WebSocket 承载终端和文件协议，主 RPC 通道只负责发起会话。Ticket 是一次性授权，不得复用。
+
+Lite-agent `2.3.6.0` 在该通道的 `remote.ready` 消息中新增 `file_transfer: 2` 能力声明。支持此能力的后台可使用 `LTF1` 二进制文件帧，并行发送上传块；单块文件数据最多 1 MiB。文件帧与终端数据共用连接，接收方必须识别文件帧，不能把它当作终端输入或输出。
+
+第三方实现应按能力声明选择传输方式。未声明该能力或后台尚未适配时，继续使用原有文件消息；这不改变主通道的 Agent 协议版本，也不恢复已经移除的旧终端协议。二进制帧格式可对照 [Lite-agent 文件帧实现](https://github.com/nuomiiiii/Lite-agent/blob/main/terminal/file_frame.go)适配。
 
 旧终端协议（`/api/clients/terminal`、`agent.terminal.request`、`"message": "terminal"`）已删除，当前版本不会降级。
 

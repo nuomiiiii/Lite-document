@@ -197,6 +197,13 @@ ZIP 根目录必须直接包含 `Lite-theme.json`。兼容旧包时也接受 `ko
           "en": "Latency tasks"
         },
         "default": []
+      },
+      {
+        "key": "HomeProbeTasks",
+        "type": "serverpingtasks",
+        "name": "首页探测任务",
+        "default": {},
+        "help": "为各节点选择和排序首页显示的探测任务，每台最多 4 个"
       }
     ]
   }
@@ -207,7 +214,7 @@ ZIP 根目录必须直接包含 `Lite-theme.json`。兼容旧包时也接受 `ko
 
 | 字段 | 适用范围 | 说明 |
 | --- | --- | --- |
-| `type` | 全部 | `title`、`switch`、`select`、`number`、`string`、`richtext`、`nodes`、`pingtasks` |
+| `type` | 全部 | `title`、`switch`、`select`、`number`、`string`、`richtext`、`nodes`、`pingtasks`、`serverpingtasks` |
 | `name` | 全部 | 字符串或多语言对象 |
 | `key` | 标题项除外 | 保存到 `theme_settings` 的唯一键 |
 | `required` | 文本类 | 是否必填 |
@@ -224,6 +231,7 @@ ZIP 根目录必须直接包含 `Lite-theme.json`。兼容旧包时也接受 `ko
 - `string`、`richtext` 默认空字符串。
 - `nodes` 默认空数组，保存当前实例中的服务器 UUID。
 - `pingtasks` 默认空数组，保存延迟监测任务 ID。
+- `serverpingtasks` 使用空对象作为默认值，按节点 UUID 保存延迟监测任务 ID 数组。
 
 `nodes` 和 `pingtasks` 由后台提供选择器，主题只需读取保存后的 ID 列表。不要在主题配置里硬编码服务器名称或任务名称。
 
@@ -236,6 +244,29 @@ const compact = data.theme_settings?.compactCards ?? true;
 ```
 
 `theme_settings` 是公开数据。不要声明密码、Token、Webhook 密钥或仅管理员可见的信息。
+
+### 按节点配置探测任务
+
+`serverpingtasks` 由后台生成按服务器选择任务的表单，只列出已分配给对应节点的延迟监测任务。每台最多选择 4 个，可拖动排序；保存后的数组顺序就是主题应使用的显示顺序。
+
+上例的 `HomeProbeTasks` 会在 `/api/public` 的 `data.theme_settings` 中返回：
+
+```json
+{
+  "HomeProbeTasks": {
+    "节点-UUID-A": [12, 3, 8],
+    "节点-UUID-B": [5, 2]
+  }
+}
+```
+
+| 数据 | 类型 | 说明 |
+| --- | --- | --- |
+| `HomeProbeTasks` | object | 配置项的键名，由主题清单定义 |
+| 节点 UUID | string | 对象中的键，标识配置适用的服务器 |
+| 任务 ID 列表 | number[] | 最多 4 个已选任务，顺序为展示顺序 |
+
+清空选择或恢复默认会删除该节点的覆盖配置，保存主题设置后生效。主题应在节点未配置时沿用默认任务顺序，并过滤已经删除或取消分配的任务；全部已选任务都失效时也可回退到默认顺序。该配置不改变监测任务本身的顺序。
 
 ### 多语言文本
 
@@ -391,6 +422,8 @@ Service Worker 容易跨主题保留旧资源。除非确实需要离线能力�
 只请求当前页面需要的节点和时间范围；长时间序列应使用服务端降采样。参数完全相同的结果可以在主题内短时复用。
 
 `common:getNodes` 只返回主题展示所需字段，即使管理员已经登录，也不会返回 Agent 版本、私有备注、部署状态、远程控制状态和节点时间戳。完整字段边界见[兼容与公共接口](/development/compatibility#主题节点资料)。
+
+节点剩余价值可读取 `common:getNodes` 的 `remaining_value` 和 `remaining_value_currency`；登录后管理员头像可读取 `public:getMe` 的 `avatar_url`。字段类型、缺省值和币种说明见 [API 与 RPC2](/development/api#命名空间)。
 
 ### 私有站点
 

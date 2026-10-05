@@ -97,6 +97,10 @@ Lite `2.3.6` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权�
 
 客户端应通过 MCP 的工具发现读取当前可用工具与参数，不要把 MCP 请求发送到 `/api/rpc2`。接入、期限、并发限制、操作记录和撤销方式见[MCP 代理与 AI 授权](/remote/mcp)，代理所需路径见[反向代理与 Tunnel](/security/reverse-proxy#cloudflare-access)。
 
+临时授权默认 30 分钟，站点最长时长默认 24 小时，可调高到 72 小时；授权表单支持显式选择长期授权。授权详情返回布尔字段 `long_term`，客户端应据此区分类型。已有授权和未指定长期选项的申请仍按临时授权处理。
+
+长期授权可跨浏览器会话失效和 Lite 正常重启保留，仍受撤销、站点开关和账号安全变更影响。OAuth Access Token 有效期仍为 5 分钟，客户端需使用 Refresh Token 轮换，不能把长期授权理解为 Access Token 永不过期。MCP 终端按授权有效期保持，授权到期或撤销后结束；文件上传和下载每块最多 1 MiB。
+
 ## HTTP 响应
 
 大部分兼容 HTTP API 使用统一外层：
@@ -441,6 +445,73 @@ socket.addEventListener("message", (event) => {
 响应的 `data` 包含 `logs`、`total`、`types` 和 `days`。`types`、`days` 是全部日志的可选筛选项及记录数，不受当前分页限制；管理后台据此显示组合筛选。
 
 成本中心管理方法包括 `admin:getBillingOverview`、`admin:getBillingServers`、`admin:getBillingMonthly`、`admin:getBillingYearly`、`admin:getBillingEntries`、`admin:createBillingTrafficReset`、`admin:createBillingIPChange`、`admin:createBillingOneTimeFee` 和 `admin:voidBillingEntry`。这些方法需要管理员权限，属于随后台演进的管理接口，不是匿名主题 API。
+
+## 通知渠道与事件
+
+通知连接参数和事件分配分别保存。以下管理接口可使用管理员登录会话或 API Key，公开主题不应调用。
+
+### 渠道配置与测试
+
+| HTTP 接口 | RPC 方法 | 参数与行为 |
+| --- | --- | --- |
+| `GET /api/admin/settings/message-sender` | `admin:getMessageSenderProvider` | 不传 `provider` 时返回已注册渠道及其参数定义 |
+| `GET /api/admin/settings/message-sender?provider=JavaScript` | `admin:getMessageSenderProvider` | `provider` 为实际渠道名，返回该渠道已保存的 `name` 和 `addition` |
+| `POST /api/admin/settings/message-sender` | `admin:setMessageSenderProvider` | 提交 `name` 和 `addition`；保存连接参数，不改变事件分配 |
+| `POST /api/admin/test/sendMessage` | `admin:testSendMessage` | 必须提交 `provider`；只测试这一渠道，绕过通知总开关、事件分配和汇总窗口 |
+
+保存和测试请求字段：
+
+| 字段 | 类型 | 用途 |
+| --- | --- | --- |
+| `name` | string | 保存时必填，使用渠道查询返回的实际名称，例如 `JavaScript` |
+| `addition` | string | 保存时使用的 JSON 字符串，内容按对应渠道的参数定义填写 |
+| `provider` | string | 查询指定配置或测试时使用的渠道名；测试时不能为空 |
+
+### 事件分配与汇总
+
+通过 `admin:getSettings` 读取、`admin:editSettings` 保存以下字段，也可使用对应的 `/api/admin/settings/` HTTP 接口：
+
+| 字段 | 类型 | 默认值与说明 |
+| --- | --- | --- |
+| `notification_enabled` | boolean | 通知总开关 |
+| `notification_routes` | object | 事件种类到渠道名数组的完整分配表；每类可指定多个渠道，空数组表示不发送 |
+| `notification_digest_enabled` | boolean | 默认 `false`，是否汇总相同内容的通知 |
+| `notification_digest_seconds` | number | 默认 `5`，允许 `1–3600` 的整数秒 |
+
+`notification_routes` 中的事件种类：
+
+| 值 | 事件 |
+| --- | --- |
+| `offline` / `online` | 离线 / 上线 |
+| `load` | 负载异常 |
+| `traffic` | 流量用量 |
+| `expire` / `renew` | 到期提醒 / 自动续费 |
+| `login` | 登录 |
+| `ping_loss` / `ping_latency` | 丢包异常 / 延迟异常 |
+| `traffic_report_daily` | 流量日报 |
+| `traffic_report_weekly` | 流量周报 |
+| `traffic_report_monthly` | 流量月报 |
+| `return_route` | 回程线路变化与恢复 |
+| `mainland_reachability` | 疑似被墙与大陆方向可达性恢复 |
+
+保存 `notification_routes` 会替换整张分配表，省略的事件种类会被补为空数组。只修改其中一类时，应先读取当前分配，合并后完整提交。渠道名必须已注册，不能使用 `none` 或 `empty`；不要继续依赖旧 `notification_method` 字段调整事件分配。
+
+开启汇总后，仅 `kind`、`event`、`message` 和 `emoji` 完全相同的事件会合并，`clients` 按节点去重，`time` 使用其中最新的事件时间。通知在从首条事件开始计算的汇总窗口结束后发送，测试消息不进入汇总。
+
+### JavaScript 事件字段
+
+JavaScript 渠道必须实现 `sendMessage(message, title)`，可额外实现 `sendEvent(event)` 接收结构化事件；没有 `sendEvent` 时会回退为文本发送。字段如下：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `kind` | string | 事件分配使用的种类，见上表；测试等没有种类的事件可能省略 |
+| `event` | string | 事件标题，异常与恢复可能使用不同标题 |
+| `clients` | object[] \| null | 关联服务器；无关联节点时可为空，汇总后可能包含多个节点 |
+| `time` | string | 带时区的 RFC3339 事件时间 |
+| `message` | string | 事件正文 |
+| `emoji` | string | 事件图标文本，可能为空 |
+
+模板应兼容 `kind` 缺失和 `clients` 为空的事件。使用与 Telegram 模板说明见 [通知与告警](/admin/notifications)。
 
 ## 指标查询
 
