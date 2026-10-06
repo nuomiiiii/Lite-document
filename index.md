@@ -30,7 +30,7 @@ features:
   - title: 成本中心
     details: 汇总服务器资费、日月年费用、附加费用、剩余价值、到期提醒和多币种参考金额。
   - title: 远程管理
-    details: 多会话终端、文件管理、任务下发，以及 MCP 代理接入、AI 授权与撤销。
+    details: 多会话终端、文件管理、远程执行、定时任务，以及 MCP 代理接入、AI 授权与撤销。
   - title: HTTPS 与安全
     details: 内置 HTTPS、Nginx、Cloudflare Tunnel、2FA 与凭据保护的实际配置方式。
   - title: 主题与开发

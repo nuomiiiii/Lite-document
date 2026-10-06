@@ -25,8 +25,9 @@ GitHub Pages 构建会根据当前 Pages 域名自动设置资源基础路径；
 
 ## 内容口径
 
-- 当前内容按 Lite `2.3.6` 的当前构建、Lite-agent `2.3.6.0` 和 Lite-Theme `1.2.4` 编写。
+- 当前内容按 Lite `2.3.7` 的当前构建、Lite-agent `2.3.6.0` 和 Lite-Theme `1.2.4` 编写。
 - 与上游行为一致的功能会明确写明一致；仅兼容数据或接口的功能会注明兼容范围；Lite 差异会单独标注。
 - 当前配套 Agent 使用独立的 [`nuomiiiii/Lite-agent`](https://github.com/nuomiiiii/Lite-agent) 仓库、`Lite-agent` 二进制和更新源。
 - Agent 页面覆盖安装、状态、日志、更新、重启、卸载和凭据保留，不再只提供安装命令。
 - MCP 代理页面覆盖客户端接入、服务器授权、访问期限、操作记录和撤销；Linux 安装页面同时覆盖 systemd 与 OpenWrt / iStoreOS procd。
+- 定时任务页面覆盖四种计划、北京时间、身份确认、立即执行、节点输出和退出码，以及停用与恢复规则。

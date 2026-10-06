@@ -134,7 +134,7 @@ Cloudflare 中的源站服务地址应填写同一 Docker 网络内的 Lite 服�
 
 ## Cloudflare Access
 
-为 Web 页面启用 Access 后，浏览器、Agent 与 MCP 客户端需要分别满足各自的访问策略。Lite `2.3.6` 使用以下连接路径：
+为 Web 页面启用 Access 后，浏览器、Agent 与 MCP 客户端需要分别满足各自的访问策略。Lite `2.3.7` 使用以下连接路径：
 
 | 用途 | 路径 | Access 配置 |
 | --- | --- | --- |

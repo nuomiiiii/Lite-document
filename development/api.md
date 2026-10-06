@@ -41,6 +41,7 @@ Lite 同时保留兼容 HTTP API，并提供 JSON-RPC 2.0 入口。新主题和�
 | 修改登录方式和 OIDC 提供方 | RPC `admin:editSettings` 中的 `disable_password_login`、`oauth_enabled`、`oauth_provider` 字段，以及 `admin:setOidcProvider` |
 | 查看主题管理列表，安装、更新、配置、删除或切换主题 | `/api/admin/theme/*`；RPC `admin:editSettings` 中的 `theme` 字段 |
 | 修改自定义 HTML | RPC `admin:editSettings` 中的 `custom_head`、`custom_body` 字段 |
+| 查询或管理定时任务、执行日志与远程命令结果 | `/api/admin/scheduled-exec*`、`/api/admin/task*`；对应的定时任务和任务结果 RPC 方法 |
 
 上述请求被拒绝时，备份、上传、账号和主题的 HTTP 接口返回 `403`，设置 HTTP 接口当前返回 `401`；直接调用对应 RPC 方法会返回权限不足错误 `-32041`。附带管理员密码或 2FA 验证码也不能把 API Key 变成管理员登录会话。
 
@@ -77,7 +78,7 @@ curl -X POST "https://monitor.example.com/api/rpc2" \
   --data '{"jsonrpc":"2.0","id":1,"method":"admin:getDashboard","params":{}}'
 ```
 
-`admin:exec`、远程管理授权、MCP 授权、查看或重置已有节点 Token、备份、账号安全、主题管理和受限设置字段不属于 API Key 可用范围；具体拒绝项见上一节。调用未列出的 `admin:*` 方法前，应以当前版本的接口权限返回为准，不要据此假设 API Key 等同于管理员登录会话。
+`admin:exec`、定时任务及远程命令结果、远程管理授权、MCP 授权、查看或重置已有节点 Token、备份、账号安全、主题管理和受限设置字段不属于 API Key 可用范围；具体拒绝项见上一节。调用未列出的 `admin:*` 方法前，应以当前版本的接口权限返回为准，不要据此假设 API Key 等同于管理员登录会话。
 
 ### 敏感操作与 2FA
 
@@ -93,7 +94,7 @@ API Key 不能签发或使用远程授权。
 
 ### MCP 接入
 
-Lite `2.3.6` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权选择节点和有效期后，可以调用命令、交互终端和文件工具；它不获得 `admin:*` 或 Agent 身份。站点 API Key、Agent Token 和浏览器远程授权均不能用于此入口。
+Lite `2.3.7` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权选择节点和有效期后，可以调用命令、交互终端和文件工具；它不获得 `admin:*` 或 Agent 身份。站点 API Key、Agent Token 和浏览器远程授权均不能用于此入口。
 
 客户端应通过 MCP 的工具发现读取当前可用工具与参数，不要把 MCP 请求发送到 `/api/rpc2`。接入、期限、并发限制、操作记录和撤销方式见[MCP 代理与 AI 授权](/remote/mcp)，代理所需路径见[反向代理与 Tunnel](/security/reverse-proxy#cloudflare-access)。
 
@@ -187,7 +188,7 @@ Lite `2.3.6` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权�
   "status": "success",
   "message": "",
   "data": {
-    "version": "2.3.6",
+    "version": "2.3.7",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }
@@ -319,7 +320,7 @@ socket.addEventListener("message", (event) => {
   "jsonrpc": "2.0",
   "id": "version-1",
   "result": {
-    "version": "2.3.6",
+    "version": "2.3.7",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }
@@ -446,6 +447,78 @@ socket.addEventListener("message", (event) => {
 
 成本中心管理方法包括 `admin:getBillingOverview`、`admin:getBillingServers`、`admin:getBillingMonthly`、`admin:getBillingYearly`、`admin:getBillingEntries`、`admin:createBillingTrafficReset`、`admin:createBillingIPChange`、`admin:createBillingOneTimeFee` 和 `admin:voidBillingEntry`。这些方法需要管理员权限，属于随后台演进的管理接口，不是匿名主题 API。
 
+## 定时任务接口
+
+Lite `2.3.7` 新增以下接口。全部要求管理员登录会话，API Key 不能查询或操作；新建、编辑、启用和立即执行还需要有效的 `exec` 范围远程授权。授权由页面完成身份验证后获取，不能用站点 API Key 或 Agent Token 替代。用户操作说明见[定时任务](/remote/schedules)。
+
+### HTTP 与 RPC 对照
+
+| HTTP 接口 | RPC 方法 | 参数与返回 |
+| --- | --- | --- |
+| `GET /api/admin/scheduled-exec` | `admin:listScheduledExec` | 返回 `schedules` 数组，包含每个任务及其最近一次执行概况 |
+| `POST /api/admin/scheduled-exec` | `admin:createScheduledExec` | 提交任务配置和身份确认授权，返回 `schedule` |
+| `PUT /api/admin/scheduled-exec/{id}` | `admin:updateScheduledExec` | 提交完整任务配置和身份确认授权，重新计算下次执行 |
+| `DELETE /api/admin/scheduled-exec/{id}` | `admin:deleteScheduledExec` | 删除任务、关联执行记录和输出，返回 `id` |
+| `POST /api/admin/scheduled-exec/order` | `admin:reorderScheduledExec` | 提交包含全部任务 ID 的 `ids` 数组，保存展示顺序 |
+| `POST /api/admin/scheduled-exec/{id}/enabled` | `admin:setScheduledExecEnabled` | 提交 `enabled`；启用时还需 `grant`、`page_id`，停用无需再次验证 |
+| `POST /api/admin/scheduled-exec/{id}/run` | `admin:runScheduledExec` | 提交 `grant`、`page_id`，立即执行一次，返回 `run` |
+| `GET /api/admin/scheduled-exec/{id}/runs` | `admin:listScheduledExecRuns` | 返回 `runs` 数组，最多最近 50 次 |
+
+HTTP 请求的任务 ID 由路径提供；直接调用 RPC 时放在 `params.id`。删除、停用、查询和排序要求登录会话，但不需要额外提交短期远程授权。
+
+### 任务配置
+
+新建和更新请求使用以下字段：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `name` | string | 必填，去除首尾空白后为 1–64 个字符 |
+| `command` | string | 必填，非空且最多 64 KiB；保持输入的命令内容 |
+| `clients` | string[] | 必填，1–100 个已存在的节点 UUID，保存时去重 |
+| `enabled` | boolean | 是否启用自动调度；创建时省略则为 `false` |
+| `kind` | string | `interval`、`daily`、`weekly` 或 `monthly` |
+| `interval_minutes` | number | `interval` 必填，整数 `1–43200`；按天配置时先换算为分钟 |
+| `time_of_day` | string | `daily`、`weekly`、`monthly` 必填，24 小时制 `HH:MM`，按北京时间计算 |
+| `weekdays` | number[] | `weekly` 使用，至少一个星期；`0` 为周日，`1–6` 为周一至周六 |
+| `weekday` | number | 单星期兼容字段；未提交 `weekdays` 时使用该值 |
+| `month_day` | number | `monthly` 必填，整数 `1–31`；不存在的日期按当月最后一天执行 |
+| `grant` | string | 新建、更新时必填，当前 `exec` 身份确认授权 |
+| `page_id` | string | 必须与签发 `grant` 时的页面标识一致 |
+
+创建、更新、启用或立即执行会消费当前授权，并可能在响应中返回 `next_grant` 和 `expires_at`。后续操作应使用新的授权；轮换不会延长原身份确认的 10 分钟有效期。更新是完整配置保存，省略字段不会自动沿用原值。
+
+全站最多保存 30 个任务，已停用任务也计入。列表顺序只用于展示；`ids` 排序数组必须完整包含当前所有任务，不能重复或遗漏。
+
+### 任务与执行记录
+
+任务对象返回名称、命令、节点、启用状态和定时配置，并增加以下字段：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 定时任务 ID |
+| `disabled_reason` | string | 自动停用原因：`security` 为账号安全变更，`remote_off` 为站点关闭远程管理；无原因时省略 |
+| `last_run_at` | string | 最近一次自动调度的时间，RFC3339；未执行时可省略 |
+| `next_run_at` | string | 下一次计划时间，RFC3339；任务停用时不要据此判断仍会执行 |
+| `last_run` | object | 最近一次执行概况，无记录时省略 |
+
+执行记录的字段：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 本次执行记录 ID |
+| `task_id` | string | 对应远程命令任务 ID；没有创建命令任务时省略 |
+| `status` | string | `dispatched` 已进入投递流程、`skipped` 跳过、`failed` 未能执行 |
+| `note` | string | 补充原因，无原因时省略 |
+| `sent` | number | 已交给当前连接的节点数 |
+| `queued` | number | 等待协议通道投递的节点数 |
+| `offline` | number | 离线且本次不投递的节点数 |
+| `failed` | number | 不可执行或投递失败的节点数 |
+| `started_at` | string | 本轮处理时间，RFC3339 |
+
+`note` 可为 `still_running`、`no_targets`、`no_clients`、`create_failed`、`remote_closed`、`persist_error` 或 `superseded`。`dispatched` 不代表命令已成功结束；有 `task_id` 时，通过 `GET /api/admin/task/{task_id}/result` 或 `admin:getTaskResultsByTaskId`（参数为 `task_id`）读取各节点的 `client`、`result`、`exit_code` 和 `finished_at`。这些结果接口同样拒绝 API Key。
+
+立即执行不修改定时时间，也不会启用已停用任务。自动调度会在上一次仍有未完成结果时跳过本轮；离线节点不会收到本次命令，也不会在上线后补发。定时方式、重启、停用和安全变更的行为见[定时任务](/remote/schedules)。
+
 ## 通知渠道与事件
 
 通知连接参数和事件分配分别保存。以下管理接口可使用管理员登录会话或 API Key，公开主题不应调用。
@@ -496,7 +569,7 @@ socket.addEventListener("message", (event) => {
 
 保存 `notification_routes` 会替换整张分配表，省略的事件种类会被补为空数组。只修改其中一类时，应先读取当前分配，合并后完整提交。渠道名必须已注册，不能使用 `none` 或 `empty`；不要继续依赖旧 `notification_method` 字段调整事件分配。
 
-开启汇总后，仅 `kind`、`event`、`message` 和 `emoji` 完全相同的事件会合并，`clients` 按节点去重，`time` 使用其中最新的事件时间。通知在从首条事件开始计算的汇总窗口结束后发送，测试消息不进入汇总。
+开启汇总后，告警及其恢复中仅 `kind`、`event`、`message` 和 `emoji` 完全相同的事件会合并，`clients` 按节点去重，`time` 使用其中最新的事件时间。通知在从首条事件开始计算的汇总窗口结束后发送；`login`、流量日报/周报/月报和测试消息不进入汇总。
 
 ### JavaScript 事件字段
 
