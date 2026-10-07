@@ -45,6 +45,7 @@ const sidebar = [
     text: "数据与存储",
     items: [
       { text: "数据库与空间维护", link: "/data/storage" },
+      { text: "外部监控数据库", link: "/data/external-database" },
       { text: "备份、导入与迁移", link: "/data/backup" },
     ],
   },

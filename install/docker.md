@@ -52,6 +52,12 @@ docker compose up -d
 docker compose logs -f lite
 ```
 
+## 接入外部监控数据库
+
+Lite 支持在后台填写 MySQL、MariaDB 或 PostgreSQL 连接串作为监控数据库，无需更改 Lite 的启动命令。主数据库仍保存在 `/app/data`，请继续保留该挂载。
+
+数据库在同一 Compose 项目中时，连接串使用数据库服务名；在其他主机上时，使用容器可访问的域名或 IP。完整 Compose 示例、后台配置和历史数据搬运步骤见[外部监控数据库](/data/external-database#docker-连接示例)。
+
 ## 端口和访问控制
 
 `-p 27777:27777` 默认会发布到宿主机所有可用地址。Docker 发布端口仍会经过宿主机网络栈，但部分系统中的 Docker 防火墙链可能早于普通防火墙规则，不能只看面板里是否“放行”。
