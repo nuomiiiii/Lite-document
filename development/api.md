@@ -10,7 +10,7 @@ Lite 同时保留兼容 HTTP API，并提供 JSON-RPC 2.0 入口。新主题和�
 
 - URL 示例中的 `https://monitor.example.com` 替换为实际面板地址。
 - 容量和流量单位均为字节；网络速率为字节/秒。
-- 时间使用带时区的 RFC3339，服务端通常返回 UTC。
+- 时间通常使用带时区的 RFC3339，服务端通常返回 UTC；主题自动更新接口中的执行时间使用 Unix 秒，见对应字段表。
 - 未登录访问会过滤 `hidden=true` 的节点。
 - 私有站点启用后，除登录页所需接口外，匿名请求会被拒绝。
 - 主题应只调用公共接口，不应读取 SQLite、指标数据库或服务端数据目录。
@@ -94,7 +94,7 @@ API Key 不能签发或使用远程授权。
 
 ### MCP 接入
 
-Lite `2.3.7` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权选择节点和有效期后，可以调用命令、交互终端和文件工具；它不获得 `admin:*` 或 Agent 身份。站点 API Key、Agent Token 和浏览器远程授权均不能用于此入口。
+Lite `2.3.9` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权选择节点和有效期后，可以调用命令、交互终端和文件工具；它不获得 `admin:*` 或 Agent 身份。站点 API Key、Agent Token 和浏览器远程授权均不能用于此入口。
 
 客户端应通过 MCP 的工具发现读取当前可用工具与参数，不要把 MCP 请求发送到 `/api/rpc2`。接入、期限、并发限制、操作记录和撤销方式见[MCP 代理与 AI 授权](/remote/mcp)，代理所需路径见[反向代理与 Tunnel](/security/reverse-proxy#cloudflare-access)。
 
@@ -188,7 +188,7 @@ Lite `2.3.7` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权�
   "status": "success",
   "message": "",
   "data": {
-    "version": "2.3.7",
+    "version": "2.3.9",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }
@@ -320,7 +320,7 @@ socket.addEventListener("message", (event) => {
   "jsonrpc": "2.0",
   "id": "version-1",
   "result": {
-    "version": "2.3.7",
+    "version": "2.3.9",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }
@@ -431,6 +431,67 @@ socket.addEventListener("message", (event) => {
 
 `admin:*` 方法会随后台能力演进。外部自动化应只调用经过验证的具体方法，并固定兼容版本，不要把后台路由列表当作永久稳定 SDK。
 
+### 探测统计：`public:getPingMetricStats`
+
+通过 `POST /api/rpc2` 调用，返回指定时间范围内各“节点 + 探测任务”的统计。匿名访问只包含可见节点；私有站点需要登录。
+
+| 参数 | 类型 | 说明 |
+| --- | --- | --- |
+| `entity_ids` | string[] | 节点 UUID 列表；省略时查询当前调用者可见的节点 |
+| `entity_id`、`uuid` | string | 单节点兼容参数，优先使用 `entity_id` |
+| `task_ids` | array | 探测任务 ID 列表，支持数字或数字字符串；省略时不过滤任务 |
+| `task_id` | number \| string | 单任务兼容参数 |
+| `start`、`end` | string | RFC3339 时间范围，结束必须晚于开始；兼容 `start_time`、`end_time` |
+| `hours` | number | 未填写开始时间时使用的查询小时数，默认 `4`；未填写结束时间时使用当前时间 |
+| `max_points` | number | 降采样目标点数，默认 `500`；兼容 `downsample_points`，实际时间间隔还受历史数据精度约束 |
+
+调用示例：
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "public:getPingMetricStats",
+  "params": {
+    "entity_ids": ["节点-uuid"],
+    "task_ids": [12],
+    "hours": 4,
+    "max_points": 500
+  }
+}
+```
+
+`result` 的字段：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `start`、`end` | string | 实际查询范围，UTC RFC3339 |
+| `interval_seconds` | number | 查询使用的聚合间隔，秒；无结果时可省略 |
+| `stats` | object[] | 各节点、各任务的统计数组 |
+| `count` | number | `stats` 条目数，不是探测次数 |
+
+`stats` 每一项的字段：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `entity_id`、`task_id` | string | 节点 UUID 与任务 ID |
+| `name`、`type` | string | 任务名称和探测类型，可能省略 |
+| `interval` | number | 任务探测间隔，秒，可能省略 |
+| `tags` | object | 序列标签，可包含 `task_id` |
+| `total` | number | 范围内的探测样本总数 |
+| `valid` | number | 成功样本数 |
+| `loss` | number | 丢包百分比，范围 `0–100` |
+| `loss_approximate` | boolean | 为 `true` 时表示丢包使用估算口径；否则可省略 |
+| `min`、`max`、`avg` | number | 成功样本的最低、最高、平均延迟，毫秒，按两位小数舍入；无有效延迟时省略 |
+| `latest` | number | 最近成功样本的延迟，毫秒；不是最近一次失败结果，可能省略 |
+| `p50`、`p99` | number | 成功延迟的 50、99 百分位，毫秒，无有效值时省略 |
+| `stddev` | number | 成功延迟的标准差，毫秒，无有效值时省略 |
+| `p99_p50_ratio` | number | 当前抖动指标：`(p99 - p50) / clamp(p50, 10, 50)`；无可计算值时为 `0` |
+
+延迟统计只使用成功样本，降采样均值按成功样本数加权。`total > 0` 且 `valid = 0` 时，`min`、`max`、`avg`、`latest`、`p50`、`p99`、`stddev` 全部省略，表示整段失败；不要把缺失字段补成 `0 ms`。存在成功样本时，`0.00 ms` 可以是实际延迟舍入后的值，需结合 `valid` 和 `loss` 判断。
+
+探测图表的公共指标查询也应结合丢包或有效样本判断断点，不能把全失败时间段绘制成零延迟曲线。
+
 ### 管理日志查询
 
 `GET /api/admin/logs` 支持以下查询参数：
@@ -447,9 +508,83 @@ socket.addEventListener("message", (event) => {
 
 成本中心管理方法包括 `admin:getBillingOverview`、`admin:getBillingServers`、`admin:getBillingMonthly`、`admin:getBillingYearly`、`admin:getBillingEntries`、`admin:createBillingTrafficReset`、`admin:createBillingIPChange`、`admin:createBillingOneTimeFee` 和 `admin:voidBillingEntry`。这些方法需要管理员权限，属于随后台演进的管理接口，不是匿名主题 API。
 
+## 主题更新接口
+
+以下接口均要求管理员登录会话，API Key 不能调用。HTTP 成功响应使用本页的统一外层，以下字段位于 `data`。用户操作见[更新主题](/themes/#更新主题)。
+
+主题相关 GitHub 请求会读取 `github_proxy` 全局设置；设置入口为“系统设置 → 通用 → GitHub 代理”。留空时使用 GitHub 原地址，填写后会将 GitHub URL 改写为“代理地址/原始 GitHub URL”。该设置同样影响主题市场中的 GitHub 来源，并用于预填节点部署指令的 GitHub 代理地址。
+
+| HTTP 接口 | 请求参数 | `data` |
+| --- | --- | --- |
+| `POST /api/admin/theme/update-all` | 无 | 本轮批量更新结果 |
+| `GET /api/admin/theme/auto-update` | 无 | 自动更新设置、时间与最近结果 |
+| `POST /api/admin/theme/auto-update` | `{enabled, interval_hours}` | 保存后的自动更新设置 |
+
+自动更新配置和响应字段：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `enabled` | boolean | 是否启用；省略时按 `false` 保存，默认关闭 |
+| `interval_hours` | number | 请求必填，整数 `1–720`，默认 `24` |
+| `next_run_at` | number | 下次执行的 Unix 秒时间戳；未启用时省略 |
+| `last_run_at` | number | 上次自动执行的 Unix 秒时间戳；未执行时省略 |
+| `last_summary` | object | 最近自动更新结果；未执行时省略 |
+
+批量结果和 `last_summary` 的字段：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `results` | object[] | 每个已安装主题的结果 |
+| `updated`、`current`、`skipped`、`failed` | number | 已更新、同版本、已跳过和失败的主题数量 |
+
+`results` 每项包含：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `short` | string | 主题标识 |
+| `name` | string \| object | 名称，可为本地化对象，也可能省略 |
+| `status` | string | `updated`、`current`、`skipped` 或 `failed` |
+| `version` | string | 当前或更新后的版本，可能省略 |
+| `message` | string | 处理说明或错误，可能省略 |
+
+单个主题失败时，批量请求仍可能返回成功，应检查 `failed` 和每项 `status`。已有批量更新在执行时返回 HTTP `409`。无来源主题会跳过，同版本不会重复安装；启用或修改自动更新间隔后，会重新计算下次执行时间。
+
+## 仪表盘设置接口
+
+对应页面为“系统设置 → 仪表盘配置”。以下接口允许管理员登录会话或 API Key；RPC 方法通过 `POST /api/rpc2` 调用。
+
+| HTTP 接口 | RPC 方法 | 参数与返回 |
+| --- | --- | --- |
+| `GET /api/admin/settings/dashboard` | `admin:getDashboardSettings` | 无参数，返回当前完整配置 |
+| `POST /api/admin/settings/dashboard` | `admin:setDashboardSettings` | 提交完整配置，返回校验并保存后的配置 |
+
+请求与返回配置字段：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `preset` | string | `overview`、`network`、`resources`、`traffic`、`operations`、`lite` 或 `custom` |
+| `modules` | object[] | 自定义布局的模块配置，数组顺序即展示顺序，字段见下表 |
+| `layout_columns` | number | 当前为 `12`；提交 12 栅格宽度时应同时传入，避免被按旧版布局换算 |
+| `refresh_seconds` | number | 实时概览刷新间隔：`15`、`30`、`60` 或 `120` 秒 |
+| `chart_refresh_seconds` | number | 历史图表刷新间隔：`15`、`30`、`60` 或 `120` 秒 |
+| `ranking_limit` | number | 排行数量：`5`、`10`、`15` 或 `20` |
+| `timezone` | string | 有效 IANA 时区，默认 `Asia/Shanghai`；仪表盘按此时区切分今日流量、按日趋势和今日恢复 |
+
+`modules` 每项包含：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 模块标识，使用查询返回的值，不可重复 |
+| `enabled` | boolean | 是否展示；至少开启一个模块 |
+| `span` | number | 宽度为 `3`、`4`、`6` 或 `12`，分别表示 1/4、1/3、1/2 或整行 |
+
+保存会处理整份配置，省略字段可能恢复默认值。只改时区时，应先查询，修改 `timezone` 后提交完整配置。选择非 `custom` 的预制布局会应用该布局的模块、刷新间隔和排行数量；自定义这些项目时请使用 `custom`。
+
+设置接口会校验时区名称和模块配置；无效时区返回参数错误。仪表盘时区不改变账单到期时区、Agent 流量重置时区或定时任务使用的北京时间。
+
 ## 定时任务接口
 
-Lite `2.3.7` 新增以下接口。全部要求管理员登录会话，API Key 不能查询或操作；新建、编辑、启用和立即执行还需要有效的 `exec` 范围远程授权。授权由页面完成身份验证后获取，不能用站点 API Key 或 Agent Token 替代。用户操作说明见[定时任务](/remote/schedules)。
+Lite `2.3.9` 提供以下接口。全部要求管理员登录会话，API Key 不能查询或操作；新建、编辑、启用和立即执行还需要有效的 `exec` 范围远程授权。授权由页面完成身份验证后获取，不能用站点 API Key 或 Agent Token 替代。用户操作说明见[定时任务](/remote/schedules)。
 
 ### HTTP 与 RPC 对照
 
@@ -519,6 +654,54 @@ HTTP 请求的任务 ID 由路径提供；直接调用 RPC 时放在 `params.id`
 
 立即执行不修改定时时间，也不会启用已停用任务。自动调度会在上一次仍有未完成结果时跳过本轮；离线节点不会收到本次命令，也不会在上线后补发。定时方式、重启、停用和安全变更的行为见[定时任务](/remote/schedules)。
 
+## MCP 活动授权管理接口
+
+以下接口要求管理员浏览器登录会话及有效的请求来源，均不接受 API Key。只有编辑接口额外要求当前管理员为授权所有者，并再次完成密码、TOTP 或通行密钥验证。已结束、已过期或已撤销授权不能通过编辑重新激活。
+
+| HTTP 接口 | 参数 | 返回 `data` |
+| --- | --- | --- |
+| `GET /api/admin/mcp/leases` | 无 | `{leases: [...]}`，授权列表 |
+| `GET /api/admin/mcp/leases/{id}` | 路径中的授权 ID | 单个授权详情 |
+| `POST /api/admin/mcp/leases/{id}` | 路径 ID、编辑字段及验证字段 | 保存后的授权详情 |
+| `POST /api/admin/mcp/leases/{id}/revoke` | 路径中的授权 ID | `{revoked: true}` |
+| `POST /api/admin/mcp/leases/revoke-all` | 无 | `{revoked: true}` |
+
+### 编辑请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `all_nodes` | boolean | `true` 为“全部服务器（含后续新增）”，动态覆盖当前及未来符合条件的节点，存储的 `target_uuids` 为空数组 |
+| `target_uuids` | string[] | 指定服务器的 UUID，必须非空；单独提交该字段表示改为指定服务器范围 |
+| `note` | string | 用途备注，去除首尾空白后最多 200 个字符；省略保留，空字符串清空 |
+| `duration_minutes` | number | 临时授权的新时长，整数分钟，范围为 1 至站点最长时长；从保存时重新计时 |
+| `long_term` | boolean | `true` 改为长期授权；`false` 改为临时授权时还需有效的 `duration_minutes` |
+| `password` | string | 未启用 2FA 时使用的管理员密码 |
+| `otp` | string | 已启用 2FA 时使用的当前验证码，兼容字段名 `2fa_code` |
+| `ceremony_id` | string | 使用通行密钥验证时的验证流程 ID，与 `credential` 一并提交 |
+| `credential` | object | 通行密钥验证结果；使用此方式时无需同时提交密码或 TOTP |
+
+范围字段 `all_nodes` 和 `target_uuids` 都省略时保留原范围。只提交 `all_nodes: false` 会保留已有指定服务器列表；原范围为全部服务器时，必须同时提交新的非空列表。全部服务器范围可以在尚无可用节点时选择，操作时仍检查节点在线状态、Agent 本地开关、协议、MCP 能力及站点开关。
+
+有效期字段 `duration_minutes` 和 `long_term` 都省略时保留原有效期。只提交时长不会把长期授权变为临时授权；长期改为临时需同时提交 `long_term: false` 和有效时长。仍有效的临时授权可以直接改为长期授权。
+
+### 授权详情字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 授权 ID，编辑后保持不变 |
+| `status` | string | 授权状态，只有仍有效的 `active` 授权可编辑 |
+| `client_name` | string | AI 客户端名称 |
+| `note` | string | 用途备注 |
+| `all_nodes` | boolean | 是否动态授权全部服务器，不能仅按空节点数组判断范围 |
+| `target_uuids` | string[] | 指定服务器列表；`all_nodes: true` 时为空数组 |
+| `created_at` | string | 创建时间，RFC3339，编辑后保持不变 |
+| `expires_at` | string | 授权期限，RFC3339；长期类型应结合 `long_term` 判断 |
+| `long_term` | boolean | 是否为长期授权 |
+| `max_concurrency` | number | 该授权允许的最大并发操作数 |
+| `running` | number | 当前运行的操作数 |
+
+列表中的授权还会包含 `client_id`、`owner_username`、`mode` 和 `revoked_at`。修改范围或有效期会中断正在运行的操作、关闭交互终端并丢弃尚未投递的命令和文件事件；只改备注不会中断。客户端无需重新进行 OAuth 连接。
+
 ## 通知渠道与事件
 
 通知连接参数和事件分配分别保存。以下管理接口可使用管理员登录会话或 API Key，公开主题不应调用。
@@ -585,6 +768,47 @@ JavaScript 渠道必须实现 `sendMessage(message, title)`，可额外实现 `s
 | `emoji` | string | 事件图标文本，可能为空 |
 
 模板应兼容 `kind` 缺失和 `clients` 为空的事件。使用与 Telegram 模板说明见 [通知与告警](/admin/notifications)。
+
+## 告警中心接口
+
+告警中心用于统一查询当前告警及仍有效的静默记录，支持离线、负载、延迟/丢包和回程线路。以下接口允许管理员登录会话或 API Key。
+
+| HTTP 接口 | RPC 方法 | 参数与返回 |
+| --- | --- | --- |
+| `GET /api/admin/notification/center` | `admin:listAlertCenter` | 无参数，返回告警数组；HTTP 放在 `data`，RPC 放在 `result` |
+| `POST /api/admin/notification/center/silence` | `admin:setAlertCenterSilence` | 提交下表字段；成功时没有额外业务数据，需重新查询最新状态 |
+
+### 静默请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `kind` | string | 查询记录返回的类型：`offline`、`load`、`latency` 或 `return_route` |
+| `target` | string | 直接使用查询记录的 `target`，不要用显示 ID 或自行拼接 |
+| `label` | string | 可选，静默记录的显示名称 |
+| `mode` | string | `off` 解除静默；`24h`、`3d`、`7d` 为对应时长；`forever` 永久静默 |
+
+### 查询记录字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `kind` | string | 告警类型，取值见上表 |
+| `id` | string | 记录标识，用于列表展示和定位，不等同于静默请求的 `target` |
+| `target` | string | 设置或解除静默时使用的目标标识 |
+| `title` | string | 告警标题 |
+| `summary` | string | 可选，补充说明 |
+| `node_uuid`、`node_name` | string | 可选，关联节点 UUID 和名称 |
+| `task_id` | number | 可选，关联任务 ID |
+| `task_name` | string | 可选，关联任务名称 |
+| `occurred_at` | string | 可选，发生时间，RFC3339 |
+| `href` | string | 对应后台页面地址 |
+| `current` | boolean | 是否仍在触发；`false` 可表示只有静默仍有效 |
+| `silenced` | boolean | 是否正在静默 |
+| `silenced_until` | string | 可选，限时静默到期时间，RFC3339 |
+| `silenced_forever` | boolean | 是否永久静默 |
+
+查询结果合并当前告警和仍有效的静默记录；告警消失后，静默仍有效的记录会保留并将 `current` 设为 `false`。搜索、筛选和分页由前端处理，查询接口不接受这些过滤参数。
+
+静默只暂停对应告警的异常通知，恢复通知仍按原规则发送，不停止检测或列表展示。
 
 ## 指标查询
 

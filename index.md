@@ -22,7 +22,7 @@ features:
   - title: 仪表盘配置
     details: 预制布局、模块排序、近 30 天流量与日均用量、每日服务器流量明细。
   - title: 数据与存储
-    details: 说明数据库占用、数据保留、备份迁移、WAL 与空间回收。
+    details: 外部监控数据库、历史迁移、数据保留、备份、WAL 与空间回收。
   - title: Agent 全生命周期
     details: 安装、状态检查、日志排查、在线配置、更新、重启和安全卸载。
   - title: 流量与通知
@@ -34,5 +34,5 @@ features:
   - title: HTTPS 与安全
     details: 内置 HTTPS、Nginx、Cloudflare Tunnel、2FA 与凭据保护的实际配置方式。
   - title: 主题与开发
-    details: 主题安装与配置，以及面向主题、API 和第三方 Agent 开发者的公共接口约定。
+    details: 主题安装、一键与自动更新，以及面向主题、API 和第三方 Agent 开发者的公共接口约定。
 ---

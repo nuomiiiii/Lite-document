@@ -1,6 +1,6 @@
 # Agent 安装与维护
 
-当前配套版本为 Lite-agent `2.3.6.0`，推荐配合 Lite `2.3.7` 的当前服务端和后台构建使用。此版本优化远程文件上传和下载，支持二进制传输与并行上传；只更新 Agent 时仍兼容原有方式。精确流量重置、MCP 完整管理、上游 Agent 迁移、HTTP 压缩回退、运行时内存优化和 Windows 安装修复继续保留。远程终端、文件管理、远程执行和 MCP 共用本地远程控制开关。
+当前配套版本为 Lite-agent `2.3.6.3`，推荐配合 Lite `2.3.9` 的当前服务端和后台构建使用。ICMP、TCP 和 HTTP 探测支持小数毫秒上报，Lite 优先使用 `value_ms`，按 `0.01 ms` 精度保存；旧版 Lite 仍可使用整数 `value`。远程文件二进制传输与并行上传、精确流量重置、MCP 完整管理、上游 Agent 迁移、HTTP 压缩回退、运行时内存优化和 Windows 安装修复继续保留。远程终端、文件管理、远程执行和 MCP 共用本地远程控制开关。
 
 本页覆盖 Agent 的安装、状态检查、日志、重启、更新和卸载。节点配置与在线下发见 [Agent 接入与配置](/remote/agent)，旧自动发现安装的处理方法见 [旧自动发现安装迁移](/install/agent-ad)。
 
@@ -81,7 +81,7 @@ docker pull ghcr.io/nuomiiiii/lite-agent:latest
 需要固定当前正式版时使用：
 
 ```bash
-docker pull ghcr.io/nuomiiiii/lite-agent:2.3.6.0
+docker pull ghcr.io/nuomiiiii/lite-agent:2.3.6.3
 ```
 
 镜像地址必须使用小写 `lite-agent`；如果后台生成的命令中仍是 `Lite-agent`，请先改为上述小写地址，否则 Docker 会拒绝执行。

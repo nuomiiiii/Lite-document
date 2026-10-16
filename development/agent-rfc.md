@@ -3,7 +3,7 @@
 本页描述 Lite 服务端与 `nuomiiiii/Lite-agent` 当前实际使用的线协议，供第三方 Agent 和采集器开发。它不是对上游协议的兼容承诺。
 
 ::: info Agent 口径
-本文以 Lite `2.3.7` 和 Lite-agent `2.3.6.0` 为实现基线。当前只支持协议 2，不保留 V1 端点、旧远程终端消息或自动降级。
+本文以 Lite `2.3.9` 的当前构建和 Lite-agent `2.3.6.3` 为实现基线。当前只支持协议 2，不保留 V1 端点、旧远程终端消息或自动降级。
 :::
 
 ::: danger 安全边界
@@ -226,7 +226,7 @@ GPU 明细：
       "disk_total": 53687091200,
       "gpu_name": "None",
       "virtualization": "kvm",
-      "version": "2.3.6.0",
+      "version": "2.3.6.3",
       "remote_protocol": 2,
       "remote_control_enabled": false
     }
@@ -293,13 +293,24 @@ GPU 明细：
     "task_id": 12,
     "ping_type": "tcp",
     "value": 28,
+    "value_ms": 28.35,
     "finished_at": "2026-08-04T08:00:00Z"
   },
   "id": "ping-result-1"
 }
 ```
 
-`value` 单位为毫秒，`-1` 表示失败/丢包。服务端优先使用 `finished_at` 作为记录时间，统一转为 UTC；该字段应为带时区的时间。字段缺失、为零值、早于接收时间超过 6 小时或晚于接收时间超过 1 分钟时，回退到服务端接收时间。`ping_type` 不决定记录主键或时间。
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `task_id` | number | 对应探测任务 ID |
+| `ping_type` | string | 探测类型，如 `icmp`、`tcp`、`http` |
+| `value` | number | 兼容字段，单位毫秒；配套 Agent 保留整数值供旧版 Lite 使用，`-1` 表示失败 |
+| `value_ms` | number | 可选的小数毫秒；当前 Lite 优先使用该值，按两位小数保存。失败仍为 `-1` |
+| `finished_at` | string | 探测完成时间，带时区的 RFC3339，可带小数秒 |
+
+Lite-agent `2.3.6.3` 同时发送 `value` 和 `value_ms`。未发送 `value_ms` 时，当前 Lite 回退使用 `value`；只有成功探测的极小延迟才可能舍入为 `0.00 ms`，不能将它当作失败。小数毫秒需要对应的 Lite `2.3.9` 当前构建支持，不应仅凭版本号判断。
+
+服务端优先使用 `finished_at` 作为记录时间，统一转为 UTC。字段缺失、为零值、早于接收时间超过 6 小时或晚于接收时间超过 1 分钟时，回退到服务端接收时间。`ping_type` 不决定记录主键或时间。
 
 ### `agent.routeResult`
 

@@ -101,12 +101,18 @@ body {
 }
 
 .vp-doc table {
-  display: table;
+  display: block;
   width: 100%;
+  overflow-x: auto;
 }
 
 .vp-doc code {
   overflow-wrap: anywhere;
+}
+
+.vp-doc table code {
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 
 .vp-doc .version-baseline-table {
@@ -125,7 +131,8 @@ body {
   overflow-wrap: normal;
 }
 
-.vp-doc .dashboard-presets-table :is(th, td):first-child {
+.vp-doc .dashboard-presets-table :is(th, td):first-child,
+.vp-doc .notification-channels-table :is(th, td):first-child {
   white-space: nowrap;
   overflow-wrap: normal;
 }
