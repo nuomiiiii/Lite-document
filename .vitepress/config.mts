@@ -30,7 +30,7 @@ const sidebar = [
     ],
   },
   {
-    text: "节点管理",
+    text: '节点管理 <span class="plus-badge" aria-label="Lite-Plus 专属功能">PLUS</span>',
     items: [
       { text: "功能与使用流程", link: "/plus/" },
       { text: "部署与从 Lite 升级", link: "/plus/install" },
