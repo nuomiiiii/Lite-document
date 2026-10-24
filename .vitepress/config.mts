@@ -39,6 +39,7 @@ const sidebar = [
       { text: "用户与套餐", link: "/plus/users" },
       { text: "节点证书", link: "/plus/certificates" },
       { text: "订阅与外部链接", link: "/plus/subscriptions" },
+      { text: "订阅模板", link: "/plus/templates" },
       { text: "节点管理接口", link: "/plus/api" },
     ],
   },

@@ -160,7 +160,8 @@ body {
   overflow-wrap: normal;
 }
 
-.vp-doc .user-plan-fields-table :is(th, td):first-child {
+.vp-doc .user-plan-fields-table :is(th, td):first-child,
+.vp-doc .plus-settings-table :is(th, td):first-child {
   min-width: 5em;
   white-space: nowrap;
   overflow-wrap: normal;

@@ -40,9 +40,14 @@
 | `cert.request` / `cert.renew` | `node_uuid`、`domain`、来源及路径等 | 请求 CSR 签发流程或绑定节点文件 |
 | `cert.delete` | `id` | 删除证书记录并同步节点 |
 | `subscription.list` | 无 | 用户订阅、地址、路径和格式 |
-| `subscription.upsert` | `user_id`、`format`、`enabled` 等 | 保存订阅 |
-| `subscription.preview` | 订阅 `id`、可选 `format` | `body`、`content_type`、`token`、`path`、`url` |
+| `subscription.upsert` | `user_id`、`format`、`auto_detect`、`enabled` 等 | 保存订阅 |
+| `subscription.preview` | 订阅 `id`、可选 `target`、`format`、`user_agent` | 配置内容、客户端、模板、兼容性提示与订阅地址 |
 | `subscription.delete` | `id` | 删除当前订阅记录；用户仍在时可重新生成 |
+| `template.list` | 无 | `templates`、`builtins`、`bindings` |
+| `template.upsert` | `name`、`kind`、`content`，编辑时带 `id` | 保存并返回模板 |
+| `template.delete` | `id` | 删除未被绑定的模板 |
+| `template.bind` | `scope`、`scope_id`、`client`、`template_id` | 设置或清除指定范围的客户端模板绑定 |
+| `template.preview` | `subscription_id`、`target`、`template` | 使用指定订阅的授权节点预览模板，可预览未保存内容 |
 | `settings.get` / `settings.set` | 查询无参数；保存用设置字段 | 签发与订阅入口设置 |
 | `control.status` | 可选 `node_uuid` | 单节点状态对象；未指定节点时返回数组 |
 | `control.sync` | 可选 `node_uuid` | 尝试投递待下发命令 |
@@ -170,7 +175,7 @@ curl -X POST "https://monitor.example.com/api/rpc2" \
 | `csr_pem` | string | 可选 CSR；常规流程省略，由 Agent 在节点生成 |
 | `test_ca` | boolean | 是否使用测试 CA，正式客户端使用时保持 `false` |
 
-返回证书记录中的 `status`、`last_error`、`not_after`、`fingerprint` 可用于查询结果；主控签发配置见下一节，节点操作见[节点证书](/plus/certificates)。
+返回证书记录中的 `status`、`last_error`、`not_after`、`fingerprint` 可用于查询结果；主控签发管理设置见下一节，节点操作见[节点证书](/plus/certificates)。
 
 ## 订阅与签发设置
 
@@ -179,15 +184,94 @@ curl -X POST "https://monitor.example.com/api/rpc2" \
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `cf_api_token` | string | Cloudflare Token；空值保留，查询只返回 `cf_api_token_set` |
-| `cf_zone_id`、`acme_email` | string | Cloudflare 区域与联系邮箱 |
+| `acme_email` | string | ACME 联系邮箱；保存签发设置时必填，省略保持原值，空字符串会报错 |
+| `clear_issuer` | boolean | `true` 清空已保存的 Cloudflare Token 和 ACME 邮箱；此时忽略同次请求中的这两个字段 |
 | `sub_listen_port` | integer | `0–65535`，`0` 不单独监听 |
 | `sub_public_port` | integer | 对外端口，`0` 跟随监听端口 |
 | `sub_path` | string | 非根路径的订阅前缀 |
 | `sub_public_host` | string | 对外地址，可包含 HTTP / HTTPS 协议 |
+| `sub_reuse_https` | boolean | 是否复用面板内置 HTTPS 的证书与私钥；开启前需配置有效的面板证书，非零订阅监听端口将使用 HTTPS |
 
-`subscription.upsert` 使用 `id`、`user_id`、`token`、`format`、`enabled`、`extra_urls`。编辑时保留原 `id` 和 `token`；`extra_urls` 为换行分隔的外部地址，逐项启用、备注和到期控制使用用户的 `extra_links`。`subscription.list` 返回完整订阅地址的 `path`、`url`，`subscription.preview` 另返回渲染内容 `body` 与 `content_type`。
+主控根据证书申请中的 `domain` 自动识别 Cloudflare 区域。Token 的权限及配置操作见[保存签发设置](/plus/certificates#保存签发设置)。
 
-订阅 HTTP 入口是配置后的 `<sub_path><token>`，不是固定 `/sub/:token`。可用 `?format=xray`、`clash`、`sing-box`、`base64` 选择输出。无效或停用订阅、停用或到期用户返回 `404`；错误格式返回 `400`。该入口通过独立订阅 Token 获取内容，不使用管理员 API Key 认证。
+`settings.get` 返回订阅入口设置和 `acme_email`，并包含以下只读字段：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `cf_api_token_set` | boolean | 是否已保存 Cloudflare Token，不返回 Token 原文 |
+| `sub_domain` | string | 复用 HTTPS 时从面板证书选取的订阅域名；不复用时为空 |
+| `https_certificate_path` | string | 面板已有证书链路径，由主控读取，Docker 使用容器内路径 |
+| `https_private_key_path` | string | 面板已有私钥路径，由主控读取 |
+| `https_domains` | string[] | 面板证书包含的域名 |
+
+通过本接口开启复用时，若未传 `sub_public_host` 或传空值，会以证书域名保存对外地址；生成订阅地址时也优先使用证书域名。修改订阅监听端口、URL 路径或复用开关会重载订阅服务。面板证书通过面板 HTTPS 设置管理，操作步骤见[复用内置 HTTPS](/plus/subscriptions#复用内置-https)。
+
+## 订阅字段与预览
+
+`admin:nodemgt.subscription.upsert`：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 新建省略，编辑保留原订阅 ID |
+| `user_id` | string | 必填，所属节点用户 |
+| `token` | string | 编辑时保留原 Token，避免改变用户订阅地址 |
+| `format` | string | 固定格式及自动识别失败时的回退格式，常用 `xray`、`base64`、`clash`、`sing-box` |
+| `auto_detect` | boolean | 是否根据请求 User-Agent 识别客户端；默认 `false`，旧订阅升级后保持关闭 |
+| `enabled` | boolean | 是否启用订阅 |
+| `extra_urls` | string | 换行分隔的外部订阅地址；逐项启用、备注和到期控制使用用户的 `extra_links` |
+
+`subscription.list` 返回上述订阅设置，以及 `username`、`path`、`url` 和创建、更新时间。
+
+`subscription.preview` 的参数：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 必填，订阅 ID |
+| `target` | string | 可选，显式选择客户端，如 `mihomo`、`loon`、`surge`、`surge-mac`、`stash`、`clash`、`sing-box`、`v2ray` |
+| `format` | string | 可选，指定原有输出格式；优先级低于 `target` |
+| `user_agent` | string | 可选，模拟客户端标识；订阅开启 `auto_detect` 且未传 `target`、`format` 时参与识别 |
+
+预览返回 `body`、`content_type`、`client`、`template_id`、`warnings`，以及 `token`、`path`、`url`。`body` 与实际订阅响应一致，分享链接订阅为 Base64 内容；`warnings` 提示所选客户端不兼容的节点等信息。`url` 为订阅基础地址，生成固定客户端链接时追加 `target` 参数。
+
+HTTP / HTTPS 订阅入口为配置后的 `<sub_path><token>`。输出选择顺序为 `target` → `format` → 自动识别 → 已保存格式。`target` 与自动识别使用客户端模板；`v2ray` 返回 Base64 分享链接。原有 `format=clash`、`format=sing-box` 保持节点列表输出，详细行为见[选择格式与预览](/plus/subscriptions#选择格式与预览)。
+
+无效 Token、停用订阅、停用或到期用户，以及无法生成配置的请求返回 `404`。该入口使用独立订阅 Token，不使用管理员 API Key；响应设置 `Cache-Control: no-store`、`Vary: User-Agent`，并通过 `X-Subscription-Client` 标明选定客户端。
+
+## 模板字段与绑定
+
+`admin:nodemgt.template.upsert`：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 新建省略，编辑传原模板 ID |
+| `name` | string | 必填，模板名称，最长 100 字节 |
+| `kind` | string | 必填，`clash`、`loon`、`surge` 或 `sing-box`；保存后不能更换类型 |
+| `content` | string | 必填，对应类型的完整配置，最大 `1 MiB`；保存前会解析并清除静态代理节点 |
+
+返回模板记录及 `revision`、`created_at`、`updated_at`。新建时 `revision` 为 `1`，编辑成功后递增。`template.list` 同时返回已保存的 `templates`、内置基础配置 `builtins` 和当前 `bindings`。
+
+`admin:nodemgt.template.bind`：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `scope` | string | `global` 系统默认、`plan` 套餐、`subscription` 用户订阅 |
+| `scope_id` | string | 系统默认传空字符串；套餐传套餐 ID；订阅传订阅 ID，非用户 ID |
+| `client` | string | `mihomo`、`clash`、`stash`、`loon`、`surge`、`surge-mac`、`sing-box`；`v2ray` 不绑定模板 |
+| `template_id` | string | 模板 ID；传空字符串移除该范围与客户端的绑定，恢复继承 |
+
+客户端与模板类型需对应：Mihomo / Clash / Stash 使用 `clash`，Surge iOS / macOS 使用 `surge`。每个范围的每个客户端单独绑定；后台星标设为同类型客户端默认时，会逐个客户端调用此方法。
+
+模板按“订阅专属 → 有效套餐 → 系统默认 → 内置基础配置”选择。删除模板前需移除全部绑定；删除用户、订阅或套餐时，其关联绑定随之清除。
+
+`admin:nodemgt.template.preview`：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `subscription_id` | string | 必填，用于提供用户授权节点与外部链接的有效订阅 ID |
+| `target` | string | 对应模板类型的客户端，如 `mihomo`、`surge-mac` |
+| `template` | object | 本次预览的模板对象，包含 `name`、`kind`、`content`，可带 `id`，无需先保存 |
+
+返回 `body`、`content_type`、`client`、`template_id` 和 `warnings`，使用与公开订阅相同的节点授权校验与生成流程。模板的格式、节点标记和使用步骤见[订阅模板](/plus/templates)。
 
 ## 下发状态与 Agent 扩展
 

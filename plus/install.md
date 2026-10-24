@@ -55,7 +55,7 @@ logread -e lite-plus
 ```yaml
 services:
   lite-plus:
-    image: ghcr.io/nuomiiiii/lite-plus:0.0.1
+    image: ghcr.io/nuomiiiii/lite-plus:0.0.3
     container_name: lite-plus
     restart: unless-stopped
     ports:
@@ -77,7 +77,7 @@ docker compose up -d
 ## Docker 从 Lite 升级
 
 1. 停止原 Lite 容器，备份原程序信息及完整宿主机 `data` 目录；外部监控数据库另外备份。
-2. 在原编排中将镜像改为 `ghcr.io/nuomiiiii/lite-plus:0.0.1`。
+2. 在原编排中将镜像改为 `ghcr.io/nuomiiiii/lite-plus:0.0.3`。
 3. 保持原有 `data` 挂载、端口、环境变量和证书挂载，沿用原入口重新创建容器。
 4. 确认原账号、节点、历史数据和 HTTPS 可用，再进入新增的“节点管理”。
 
@@ -133,6 +133,6 @@ curl -fsSL https://raw.githubusercontent.com/nuomiiiii/Lite-Plus-agent/main/migr
 
 ## 备份与更新
 
-Plus 节点管理配置、用户、套餐、订阅和计量记录保存在主数据库中，随主数据库一起备份。备份中还含有节点用户和证书签发等敏感配置，应按完整实例备份保存。
+Plus 节点管理配置、用户、套餐、订阅、订阅模板及其绑定、计量记录保存在主数据库中，随主数据库一起备份。备份中还含有节点用户和证书签发等敏感配置，应按完整实例备份保存。
 
 Agent 本地状态与节点证书私钥不在主控备份中，应单独保存 Agent 状态目录和外部证书文件。外部监控数据库仍需单独备份。后续服务端更新使用 Plus 的 Release 或镜像，Agent 更新使用 Plus-agent 仓库；共用的检查与回退步骤见[更新与数据库迁移](/install/update)。
