@@ -1,5 +1,7 @@
 # Linux 脚本安装
 
+<PlusBadge /> Lite-Plus 使用独立安装脚本及 `lite-plus` 服务，见 [Plus Linux 安装](/plus/install#linux-安装)。下方脚本适用于 Lite。
+
 本项目官方安装脚本支持使用 systemd 的常见 Linux 发行版，以及 OpenWrt / iStoreOS 等使用 procd 的软路由。这里的“官方”专指 `nuomiiiii/lite` 仓库中的脚本。
 
 官方 Linux 包提供 `amd64`、`arm64`、`386`、`riscv64` 和 `loong64`。软路由也需要匹配其中一种架构；不能仅根据设备运行 OpenWrt 就判断可以安装。

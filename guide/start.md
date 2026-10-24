@@ -1,10 +1,12 @@
 # 快速开始
 
-这份手册面向 Lite [**nuomiiiii/lite**](https://github.com/nuomiiiii/lite)，不是上游 `komari-monitor/komari` 的原样镜像。
+这份手册由 [Lite](https://github.com/nuomiiiii/lite) 与 [Lite-Plus](https://github.com/nuomiiiii/Lite-Plus) 共用。带 <PlusBadge /> 徽标的内容仅适用于 Lite-Plus；它在共用功能上增加代理节点、用户、套餐、证书和订阅管理。
 
 安装脚本、Docker 镜像、数据库迁移和后台功能均以本分支为准。当前适用版本见[版本与功能范围](/guide/versioning)。
 
 当前配套 Agent 为 [`nuomiiiii/Lite-agent`](https://github.com/nuomiiiii/Lite-agent)。安装脚本、二进制、Docker 镜像和自动更新均使用 Lite-agent 自己的仓库与名称。
+
+<PlusBadge /> 使用 Lite-Plus 时，从[部署与从 Lite 升级](/plus/install)开始，并安装 Lite-Plus-agent。Plus 新安装默认 HTTP 端口为 `28777`；本页下方部署入口与 `27777` 示例面向 Lite。已有 Lite 实例迁到 Plus 时保留原实际端口。
 
 手册中提到上游或官方实现时，会明确说明是“行为一致”“仅兼容指定范围”还是“Lite 存在差异”；没有明确结论的内容不应自行推断为完全相同。
 
@@ -16,6 +18,7 @@
 | 常见 Linux + systemd | [Linux 脚本安装](/install/linux) | 自带安装、更新、服务管理菜单 |
 | OpenWrt / iStoreOS + procd | [Linux 脚本安装](/install/linux) | 下载脚本后用 `sh` 执行，需匹配官方支持的 CPU 架构 |
 | Windows 或特殊架构 | [二进制安装](/install/binary) | 手动管理进程与数据目录 |
+| Lite-Plus 新安装或从 Lite 升级 <PlusBadge /> | [Plus 部署](/plus/install) | 使用 Plus 专属脚本、镜像与 Agent |
 
 新安装的默认 Web 端口为 `27777`。首次打开 `http://服务器地址:27777` 后，按五步引导依次完成欢迎、管理员、站点信息、指标数据库和确认。未初始化时即使先访问公开大屏，也会自动进入安装引导。
 
@@ -38,6 +41,8 @@ HTTP 自动跳转默认关闭。先确认面板可以正常访问，再配置反
 9. 在“成本中心”确认服务器资费、到期时间和显示币种是否正确。
 10. 需要 AI 管理节点时，按[MCP 代理与 AI 授权](/remote/mcp)开启功能、连接客户端并授权服务器。
 11. 需要周期执行命令时，在“远程管理 → 定时任务”设置计划和目标节点，步骤见[定时任务](/remote/schedules)。
+
+<PlusBadge /> 需要代理节点管理时，继续按[首次配置流程](/plus/#第一次配置)创建证书、入站与节点用户，再生成客户端订阅。
 
 ## 首次安装引导
 

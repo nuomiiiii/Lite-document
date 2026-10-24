@@ -4,6 +4,8 @@
 
 ::: info Agent 口径
 本文以 Lite `2.3.9` 的当前构建和 Lite-agent `2.3.6.3` 为实现基线。当前只支持协议 2，不保留 V1 端点、旧远程终端消息或自动降级。
+
+<PlusBadge /> Lite-Plus-agent 在同一 v2 通道上增加节点管理扩展，见 [Plus 节点管理接口](/plus/api#下发状态与-agent-扩展)。普通 Lite-agent 不提供这些扩展。
 :::
 
 ::: danger 安全边界

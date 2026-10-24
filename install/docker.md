@@ -1,5 +1,7 @@
 # Docker 部署
 
+<PlusBadge /> Lite-Plus 使用独立镜像与默认端口，完整编排和从 Lite 升级步骤见 [Plus 部署](/plus/install#docker-新安装)。下方命令适用于 Lite。
+
 Docker 是推荐部署方式。关键不是容器本身，而是把 `/app/data` 持久化到宿主机。
 
 ## docker run

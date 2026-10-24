@@ -4,6 +4,8 @@ Agent 负责采集服务器状态、执行探测并在管理员授权后提供�
 
 ::: info Agent 口径
 本页使用 Lite 配套的 [`nuomiiiii/Lite-agent`](https://github.com/nuomiiiii/Lite-agent)。它有独立仓库、`Lite-agent-*` 二进制、Docker 镜像和自动更新源；协议细节见 [Agent RFC](/development/agent-rfc)。
+
+<PlusBadge /> Lite-Plus 需使用独立的 Lite-Plus-agent 执行节点管理配置，安装、迁移与服务名称见 [Plus Agent](/plus/install#安装或迁移-plus-agent)。共用的监控与远程配置仍按本页操作。
 :::
 
 接入单台服务器时，先在 Lite 后台添加节点，再打开该节点的“节点配置”，切换到“部署指令”，选择平台和安装选项后复制完整命令到目标服务器执行。

@@ -1,5 +1,7 @@
 # 二进制安装
 
+<PlusBadge /> Lite-Plus 的二进制仍以 `Lite-<系统>-<架构>` 命名，但下载仓库和新安装端口不同，见 [Plus 二进制部署](/plus/install#二进制部署)。下方下载链接适用于 Lite。
+
 从 [Releases](https://github.com/nuomiiiii/lite/releases) 下载与系统和架构匹配的文件。
 
 ## Linux

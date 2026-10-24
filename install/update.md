@@ -1,5 +1,7 @@
 # 更新与数据库迁移
 
+<PlusBadge /> 从 Lite 切换到 Lite-Plus 的镜像、服务和 Agent 步骤见 [Plus 部署与升级](/plus/install)。Plus 后续更新也使用自己的发布源；本页的备份与检查流程可供共用，Lite 的下载命令不能直接用于 Plus。
+
 Lite 可以从已有 Lite、旧 Komari Lite 以及已支持的上游数据库来源升级。更新程序、迁移数据和更新 Agent 是三个独立步骤；容器或服务已经启动，不代表数据库迁移和节点连接已经完成。
 
 ## 更新前

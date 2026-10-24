@@ -12,9 +12,30 @@
 
 </div>
 
-手册按 Lite `2.3.9` 的当前功能和上述配套版本编写。同一版本号可能包含不同构建，具体标识以 Lite“关于”页面和 GitHub Release 中的七位构建码为准；排查问题时应同时提供版本号和构建码。
+手册由 Lite 与 Lite-Plus 共用，以上为 Lite 的版本基线。带 <PlusBadge /> 徽标的页面、段落或表格行仅适用于 Lite-Plus；其他共用功能沿用原章节，部署命令与默认端口按各自项目选择。
+
+同一版本号可能包含不同构建，具体标识以“关于”页面和对应项目 GitHub Release 中的七位构建码为准；排查问题时应同时提供项目名称、版本号和构建码。
 
 使用 Snapshot 时，应以对应 Release 的测试说明为补充，并在更新前备份完整 `data` 目录。
+
+## Lite-Plus 项目基线 <PlusBadge />
+
+| 组件 | 文档基线 | 说明 |
+| --- | --- | --- |
+| Lite-Plus | `0.0.1` | 在共用监控与管理功能上增加代理节点管理 |
+| Lite-Plus-agent | `0.0.0.4` | 节点采集、Xray / sing-box 内核与节点配置下发 |
+| Lite-Theme | `1.2.9` | 共用公开主题 |
+
+Plus 章节按当前项目代码编写，安装与更新使用 Plus 自己的仓库和产物。主要内容包括：
+
+- [部署与从 Lite 升级](/plus/install)：独立脚本、镜像和 Agent，说明新安装默认端口以及保留原入口的升级步骤。
+- [入站与协议](/plus/inbounds)、[出站与路由](/plus/forwarding)：管理代理入口、传输安全、分享地址、额外出口与分流规则，并检查节点下发结果。
+- [用户与套餐](/plus/users)：分配入站、流量额度、期限、单节点限速与在线 IP 上限，说明套餐修改和续费的影响。
+- [节点证书](/plus/certificates)：主控申请证书或绑定节点已有证书文件，与面板 HTTPS 分开管理。
+- [订阅与外部链接](/plus/subscriptions)：配置独立订阅入口、导出多种格式、预览二维码，并合并外部分享链接与订阅。
+- [节点管理接口](/plus/api)：补充 `admin:nodemgt.*` 方法、字段单位、认证与 Plus Agent 扩展。
+
+第一次使用请从 [Lite-Plus 功能与使用流程](/plus/)开始。普通 Lite 不提供这些节点管理功能，普通 Lite-agent 也不能代替 Plus Agent 执行节点配置。
 
 ## Lite 2.3.9、Agent 2.3.6.3 与 Theme 1.2.9 重点变化
 
@@ -55,6 +76,7 @@ Lite 基于 [komari-monitor/komari](https://github.com/komari-monitor/komari) �
 - “与上游一致”表示当前 Lite 已按实际实现核对，所述行为可按同一方式使用。
 - “上游兼容”只表示文中明确列出的版本、数据或接口可以迁移或调用，不代表镜像、数据库和后台实现完全相同。
 - “Lite-agent”表示 `nuomiiiii/Lite-agent` 独立仓库的配套 Agent。当前只支持协议 2，不代表兼容上游或旧版 Agent。
+- <PlusBadge /> 表示 Lite-Plus 专属内容；“Lite-Plus-agent”使用 Plus 独立的仓库、程序和更新源。
 - “本项目官方脚本”表示 `nuomiiiii/lite` 仓库发布的安装脚本，不是上游仓库的脚本。
 - Lite 与上游确有差异时，页面会直接标注差异和适用范围，不要求读者自行判断。
 

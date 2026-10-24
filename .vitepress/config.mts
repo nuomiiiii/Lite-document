@@ -30,6 +30,19 @@ const sidebar = [
     ],
   },
   {
+    text: "节点管理",
+    items: [
+      { text: "功能与使用流程", link: "/plus/" },
+      { text: "部署与从 Lite 升级", link: "/plus/install" },
+      { text: "入站与协议", link: "/plus/inbounds" },
+      { text: "出站与路由", link: "/plus/forwarding" },
+      { text: "用户与套餐", link: "/plus/users" },
+      { text: "节点证书", link: "/plus/certificates" },
+      { text: "订阅与外部链接", link: "/plus/subscriptions" },
+      { text: "节点管理接口", link: "/plus/api" },
+    ],
+  },
+  {
     text: "后台使用",
     items: [
       { text: "仪表盘", link: "/admin/dashboard" },
@@ -80,7 +93,7 @@ export default defineConfig({
   base,
   lang: "zh-CN",
   title: "Lite 文档",
-  description: "Lite 部署、使用、排障与主题开发手册",
+  description: "Lite 与 Lite-Plus 共用的部署、使用、排障与开发手册；Plus 专属功能单独标记",
   cleanUrls: true,
   lastUpdated: true,
   head: [
@@ -98,6 +111,7 @@ export default defineConfig({
       { text: "快速开始", link: "/guide/start" },
       { text: "Agent 运维", link: "/install/agent" },
       { text: "使用指南", link: "/admin/dashboard" },
+      { text: "Lite-Plus", link: "/plus/" },
       { text: "主题开发", link: "/development/theme" },
       { text: "常见问题", link: "/faq/" },
     ],

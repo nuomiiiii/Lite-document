@@ -4,7 +4,7 @@ layout: home
 hero:
   name: "Lite"
   text: "服务器监控与远程管理手册"
-  tagline: Lite 的安装、升级、账单、监控、远程管理、主题与安全配置说明。
+  tagline: Lite 与 Lite-Plus 共用手册，覆盖安装、监控、远程管理与代理节点配置；Plus 专属内容单独标记。
   image:
     src: /assets/lite-icon.svg?v=1
     alt: Lite
@@ -15,6 +15,9 @@ hero:
     - theme: alt
       text: 从旧版本升级
       link: /install/update
+    - theme: alt
+      text: Lite-Plus
+      link: /plus/
 
 features:
   - title: 部署与升级
@@ -35,4 +38,7 @@ features:
     details: 内置 HTTPS、Nginx、Cloudflare Tunnel、2FA 与凭据保护的实际配置方式。
   - title: 主题与开发
     details: 主题安装、一键与自动更新，以及面向主题、API 和第三方 Agent 开发者的公共接口约定。
+  - title: Lite-Plus
+    details: 独立部署与升级，以及入站、出站、路由、节点用户、套餐、证书、订阅和开发接口。
+    link: /plus/
 ---

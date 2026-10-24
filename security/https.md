@@ -10,6 +10,8 @@
 - 证书路径：`./data/tls/server.crt`。
 - 私钥路径：`./data/tls/server.key`。
 
+<PlusBadge /> Lite-Plus 新安装的 HTTP / HTTPS 默认端口分别为 `28777` / `37888`。从 Lite 升级会保留原实际端口和 HTTPS 设置，示例中的映射需按实际配置替换。“节点管理 → 证书”用于代理入站证书，与本页的面板 HTTPS 分开设置，见[节点证书](/plus/certificates)。
+
 初始化安装不会强制 HTTPS，也不会在没有证书时锁死 HTTP。
 
 ## 证书配置
