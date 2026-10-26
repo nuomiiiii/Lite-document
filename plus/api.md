@@ -37,8 +37,13 @@
 | `assignment.topup` | `user_id`、`extra_bytes`、`operation_id` | 增加额度，不清零已用量 |
 | `assignment.modify` | `user_id`、可选额度/速率/IP 字段及 `operation_id` | 调整额度、限速和在线 IP 上限 |
 | `cert.list` | 可选 `node_uuid` | 证书数组 |
-| `cert.request` / `cert.renew` | `node_uuid`、`domain`、来源及路径等 | 请求 CSR 签发流程或绑定节点文件 |
+| `cert.request` / `cert.renew` | `node_uuid`、`source` 及对应来源字段 | 下发根证书、请求 CSR 签发流程或绑定节点文件 |
+| `cert.set_auto_renew` | `id`、`auto_renew` | 设置单节点主控申请证书的自动续签 |
 | `cert.delete` | `id` | 删除证书记录并同步节点 |
+| `root_cert.list` | 无 | 根域名证书数组，返回状态和有效期等安全视图 |
+| `root_cert.issue` | `domain`，可选 `id`、`sync`、`test_ca` | 申请或续签根域名及通配域名证书，并向关联节点下发 |
+| `root_cert.set_auto_renew` | `id`、`auto_renew` | 设置根域名证书的自动续签 |
+| `root_cert.delete` | `id` | 删除没有节点证书引用的根证书 |
 | `subscription.list` | 无 | 用户订阅、地址、路径和格式 |
 | `subscription.upsert` | `user_id`、`format`、`auto_detect`、`enabled` 等 | 保存订阅 |
 | `subscription.preview` | 订阅 `id`、可选 `target`、`format`、`user_agent` | 配置内容、客户端、模板、兼容性提示与订阅地址 |
@@ -80,6 +85,9 @@ curl -X POST "https://monitor.example.com/api/rpc2" \
 | `transport`、`security` | string | 传输及 `none`、`tls`、`reality` 等安全方式 |
 | `cert_id`、`sni`、`alpn` | string | TLS 证书和安全参数 |
 | `flow` | string | 入站默认 VLESS Flow |
+| `ss_method` | string | Shadowsocks 加密方法，默认 `2022-blake3-aes-128-gcm` |
+| `accounts` | object[] | HTTP 入站的用户名密码数组，每项为 `{"user":"用户名","pass":"密码"}` |
+| `allow_transparent` | boolean | HTTP 入站透明转发开关，默认 `false`，按所选内核支持情况使用 |
 | `reality_dest`、`reality_server_names`、`reality_short_id` | string | Reality 参数；密钥缺省可由服务端生成 |
 | `ws_path`、`ws_host`、`grpc_service`、`grpc_multi` | string / boolean | WebSocket / gRPC 参数 |
 | `http_path`、`http_host`、`http_mode` | string | HTTPUpgrade / XHTTP 参数 |
@@ -90,7 +98,11 @@ curl -X POST "https://monitor.example.com/api/rpc2" \
 | `public_host`、`public_port` | string / integer | 生成分享地址使用的公开目标 |
 | `exclude_from_sub` | boolean | 是否从订阅排除 |
 
-读取返回会包含配置和版本、创建/更新时间。节点应用结果需要另外查询 `control.status`，不能仅凭保存接口成功判断已经监听。
+HTTP 协议使用 `http`，传输为 `tcp`，安全方式为 `none` 或 `tls`。保存时会忽略用户名或密码为空的账户，同名账户只保留第一组；没有有效账户时自动生成一组，调用方应读取保存结果。
+
+读取返回会包含配置和版本、创建/更新时间，以及 `accounts`、`allow_transparent` 等字段。Shadowsocks 的 `ss_password` 为读取返回的服务器密钥，不是 `inbound.upsert` 的写入参数；SS2022 用户连接还需要配合用户密钥，应使用订阅生成的完整密码。
+
+节点应用结果需要另外查询 `control.status`，不能仅凭保存接口成功判断已经监听。
 
 ## 出站与路由字段
 
@@ -166,16 +178,47 @@ curl -X POST "https://monitor.example.com/api/rpc2" \
 
 `cert.request` 与 `cert.renew` 使用同一组参数：
 
+<div class="plus-settings-table">
+
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `id` | string | 新建省略，续期或重新读取时传原证书 ID |
-| `node_uuid`、`domain` | string | 必填，目标节点和证书域名 |
-| `source` | string | `acme` 主控申请，`file` 读取节点文件 |
+| `node_uuid` | string | 必填，目标节点 UUID |
+| `source` | string | `root` 根证书下发、`acme` 主控申请、`file` 读取节点文件 |
+| `domain` | string | `acme` / `file` 必填；`root` 使用所选根证书的域名 |
+| `root_cert_id` | string | `root` 必填，已经签发的根证书 ID |
+| `share_domain` | string | `root` 必填，节点实际使用的域名，须为根域名本身或其一级子域名 |
+| `cover_wildcard` | boolean | `acme` 可选，控制是否同时申请该域名的通配域名；后台单节点申请使用指定域名 |
 | `cert_path`、`key_path` | string | 文件来源的节点证书链与私钥完整路径 |
 | `csr_pem` | string | 可选 CSR；常规流程省略，由 Agent 在节点生成 |
 | `test_ca` | boolean | 是否使用测试 CA，正式客户端使用时保持 `false` |
 
-返回证书记录中的 `status`、`last_error`、`not_after`、`fingerprint` 可用于查询结果；主控签发管理设置见下一节，节点操作见[节点证书](/plus/certificates)。
+</div>
+
+省略 `source` 时，带 `root_cert_id` 视为根证书下发，带文件路径视为节点文件，否则使用主控申请。建议调用方明确传入来源及其必填字段。
+
+返回证书记录中的 `status`、`last_error`、`not_after`、`fingerprint` 可用于查询结果，还包含 `source`、`root_cert_id`、`share_domain`、`cover_wildcard` 和 `auto_renew`。自动续签通过 `cert.set_auto_renew` 修改；根证书下发记录跟随根证书更新，节点文件由外部工具续期。
+
+### 根域名证书
+
+`admin:nodemgt.root_cert.issue`：
+
+<div class="plus-settings-table">
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `domain` | string | 必填，如 `example.com`，申请该域名及 `*.example.com` |
+| `id` | string | 续期或重试传原 ID；新建省略，同域名已有记录时复用该记录 |
+| `sync` | boolean | 默认 `false`，异步申请并返回 `pending`；设为 `true` 时等待申请结果 |
+| `test_ca` | boolean | 测试用途，默认 `false`；正式使用前先保存 Cloudflare Token 与 ACME 邮箱 |
+
+</div>
+
+异步申请后使用 `root_cert.list` 查询状态。`root_cert.issue` 和 `root_cert.list` 返回 `id`、`domain`、`fingerprint`、`issuer`、`not_after`、`auto_renew`、`status`、`last_error`、`created_at`、`updated_at`，不返回私钥或证书原文。
+
+新建根证书和主控申请的节点证书默认开启自动续签。调用 `root_cert.set_auto_renew` 时提交 `id` 与布尔值 `auto_renew`；`cert.set_auto_renew` 使用相同字段。续签窗口和后台操作见[自动续签与手动续期](/plus/certificates#自动续签与手动续期)。
+
+根证书的私钥由主控生成并加密保存，向节点下发时同时发送证书链与私钥；单节点主控申请仍由 Agent 生成私钥与 CSR。根证书仍被节点证书引用时，`root_cert.delete` 会拒绝删除。主控签发设置见下一节，完整操作见[节点证书](/plus/certificates)。
 
 ## 订阅与签发设置
 
@@ -189,7 +232,7 @@ curl -X POST "https://monitor.example.com/api/rpc2" \
 | `sub_listen_port` | integer | `0–65535`，`0` 不单独监听 |
 | `sub_public_port` | integer | 对外端口，`0` 跟随监听端口 |
 | `sub_path` | string | 非根路径的订阅前缀 |
-| `sub_public_host` | string | 对外地址，可包含 HTTP / HTTPS 协议 |
+| `sub_public_host` | string | 手动填写的实际对外地址，可包含 HTTP / HTTPS 协议；泛域名证书填写客户端实际访问的主机名 |
 | `sub_reuse_https` | boolean | 是否复用面板内置 HTTPS 的证书与私钥；开启前需配置有效的面板证书，非零订阅监听端口将使用 HTTPS |
 
 主控根据证书申请中的 `domain` 自动识别 Cloudflare 区域。Token 的权限及配置操作见[保存签发设置](/plus/certificates#保存签发设置)。
@@ -199,12 +242,12 @@ curl -X POST "https://monitor.example.com/api/rpc2" \
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `cf_api_token_set` | boolean | 是否已保存 Cloudflare Token，不返回 Token 原文 |
-| `sub_domain` | string | 复用 HTTPS 时从面板证书选取的订阅域名；不复用时为空 |
+| `sub_domain` | string | 复用 HTTPS 时从面板证书提取的域名信息；不复用时为空，不用于自动填写或优先生成订阅地址 |
 | `https_certificate_path` | string | 面板已有证书链路径，由主控读取，Docker 使用容器内路径 |
 | `https_private_key_path` | string | 面板已有私钥路径，由主控读取 |
 | `https_domains` | string[] | 面板证书包含的域名 |
 
-通过本接口开启复用时，若未传 `sub_public_host` 或传空值，会以证书域名保存对外地址；生成订阅地址时也优先使用证书域名。修改订阅监听端口、URL 路径或复用开关会重载订阅服务。面板证书通过面板 HTTPS 设置管理，操作步骤见[复用内置 HTTPS](/plus/subscriptions#复用内置-https)。
+`sub_public_host` 省略时保留原值，传空字符串时清空。开启或关闭复用不会用证书域名覆盖此值；生成订阅地址只使用已填写的对外地址，留空时返回相对路径。修改订阅监听端口、URL 路径或复用开关会重载订阅服务。面板证书通过面板 HTTPS 设置管理，操作步骤见[复用内置 HTTPS](/plus/subscriptions#复用内置-https)。
 
 ## 订阅字段与预览
 

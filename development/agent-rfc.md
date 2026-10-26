@@ -3,7 +3,7 @@
 本页描述 Lite 服务端与 `nuomiiiii/Lite-agent` 当前实际使用的线协议，供第三方 Agent 和采集器开发。它不是对上游协议的兼容承诺。
 
 ::: info Agent 口径
-本文以 Lite `2.3.9` 的当前构建和 Lite-agent `2.3.6.3` 为实现基线。当前只支持协议 2，不保留 V1 端点、旧远程终端消息或自动降级。
+本文以 Lite `2.3.10` 的当前构建和 Lite-agent `2.3.10.1` 为实现基线。当前只支持协议 2，不保留 V1 端点、旧远程终端消息或自动降级。
 
 <PlusBadge /> Lite-Plus-agent 在同一 v2 通道上增加节点管理扩展，见 [Plus 节点管理接口](/plus/api#下发状态与-agent-扩展)。普通 Lite-agent 不提供这些扩展。
 :::
@@ -228,7 +228,7 @@ GPU 明细：
       "disk_total": 53687091200,
       "gpu_name": "None",
       "virtualization": "kvm",
-      "version": "2.3.6.3",
+      "version": "2.3.10.1",
       "remote_protocol": 2,
       "remote_control_enabled": false
     }
@@ -310,7 +310,7 @@ GPU 明细：
 | `value_ms` | number | 可选的小数毫秒；当前 Lite 优先使用该值，按两位小数保存。失败仍为 `-1` |
 | `finished_at` | string | 探测完成时间，带时区的 RFC3339，可带小数秒 |
 
-Lite-agent `2.3.6.3` 同时发送 `value` 和 `value_ms`。未发送 `value_ms` 时，当前 Lite 回退使用 `value`；只有成功探测的极小延迟才可能舍入为 `0.00 ms`，不能将它当作失败。小数毫秒需要对应的 Lite `2.3.9` 当前构建支持，不应仅凭版本号判断。
+当前 Lite-agent 同时发送 `value` 和 `value_ms`。未发送 `value_ms` 时，当前 Lite 回退使用 `value`；只有成功探测的极小延迟才可能舍入为 `0.00 ms`，不能将它当作失败。小数毫秒需要具备对应功能的服务端构建支持，不应仅凭版本号判断。
 
 服务端优先使用 `finished_at` 作为记录时间，统一转为 UTC。字段缺失、为零值、早于接收时间超过 6 小时或晚于接收时间超过 1 分钟时，回退到服务端接收时间。`ping_type` 不决定记录主键或时间。
 

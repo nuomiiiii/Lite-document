@@ -97,7 +97,7 @@ API Key 不能签发或使用远程授权。
 
 ### MCP 接入
 
-Lite `2.3.9` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权选择节点和有效期后，可以调用命令、交互终端和文件工具；它不获得 `admin:*` 或 Agent 身份。站点 API Key、Agent Token 和浏览器远程授权均不能用于此入口。
+Lite 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权选择节点和有效期后，可以调用命令、交互终端和文件工具；它不获得 `admin:*` 或 Agent 身份。站点 API Key、Agent Token 和浏览器远程授权均不能用于此入口。
 
 客户端应通过 MCP 的工具发现读取当前可用工具与参数，不要把 MCP 请求发送到 `/api/rpc2`。接入、期限、并发限制、操作记录和撤销方式见[MCP 代理与 AI 授权](/remote/mcp)，代理所需路径见[反向代理与 Tunnel](/security/reverse-proxy#cloudflare-access)。
 
@@ -191,7 +191,7 @@ Lite `2.3.9` 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权�
   "status": "success",
   "message": "",
   "data": {
-    "version": "2.3.9",
+    "version": "2.3.10",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }
@@ -323,7 +323,7 @@ socket.addEventListener("message", (event) => {
   "jsonrpc": "2.0",
   "id": "version-1",
   "result": {
-    "version": "2.3.9",
+    "version": "2.3.10",
     "hash": "build-commit-hash",
     "deployment": "docker"
   }
@@ -589,7 +589,7 @@ socket.addEventListener("message", (event) => {
 
 ## 定时任务接口
 
-Lite `2.3.9` 提供以下接口。全部要求管理员登录会话，API Key 不能查询或操作；新建、编辑、启用和立即执行还需要有效的 `exec` 范围远程授权。授权由页面完成身份验证后获取，不能用站点 API Key 或 Agent Token 替代。用户操作说明见[定时任务](/remote/schedules)。
+以下定时任务接口全部要求管理员登录会话，API Key 不能查询或操作；新建、编辑、启用和立即执行还需要有效的 `exec` 范围远程授权。授权由页面完成身份验证后获取，不能用站点 API Key 或 Agent Token 替代。用户操作说明见[定时任务](/remote/schedules)。
 
 ### HTTP 与 RPC 对照
 
