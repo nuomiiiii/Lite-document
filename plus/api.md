@@ -26,7 +26,7 @@
 | `outbound.upsert` / `route.upsert` | 对应配置，编辑时带 `id` | 保存记录并排队下发 |
 | `outbound.delete` / `route.delete` | `id` | 删除对应配置 |
 | `user.list` | 可选 `node_uuid` | 用户、入站授权、套餐、在线状态与 IP、外部链接 |
-| `user.upsert` | 用户字段、`inbound_ids`、`plan_id`、可选 `extra_links` | 保存用户并同步相关节点 |
+| `user.upsert` | 用户字段、`inbound_ids`、`plan_id`、可选 `extra_links` | 保存用户并同步相关节点；新用户自动创建订阅与连接凭据，响应附带明文 `secret` |
 | `user.setStatus` | `id`、`status`、可选 `operation_id` | 设置 `active`、`disabled` 或 `expired` |
 | `user.clearIPs` / `user.delete` | `id` | 清理 IP 记录 / 删除用户及关联配置 |
 | `credential.issue` | `user_id`、`kind`、可选 `secret` | 返回 `credential` 和明文 `secret`；`kind` 默认 `uuid` |
@@ -39,7 +39,7 @@
 | `cert.list` | 可选 `node_uuid` | 证书数组 |
 | `cert.request` / `cert.renew` | `node_uuid`、`source` 及对应来源字段 | 下发根证书、请求 CSR 签发流程或绑定节点文件 |
 | `cert.set_auto_renew` | `id`、`auto_renew` | 设置单节点主控申请证书的自动续签 |
-| `cert.delete` | `id` | 删除证书记录并同步节点 |
+| `cert.delete` | `id` | 删除没有入站引用的证书记录并同步节点 |
 | `root_cert.list` | 无 | 根域名证书数组，返回状态和有效期等安全视图 |
 | `root_cert.issue` | `domain`，可选 `id`、`sync`、`test_ca` | 申请或续签根域名及通配域名证书，并向关联节点下发 |
 | `root_cert.set_auto_renew` | `id`、`auto_renew` | 设置根域名证书的自动续签 |
@@ -80,11 +80,11 @@ curl -X POST "https://monitor.example.com/api/rpc2" \
 | `node_uuid`、`name` | string | 必填，节点 UUID 与名称 |
 | `protocol`、`core` | string | 协议与 `xray` / `sing-box` 内核 |
 | `listen`、`stack` | string | 监听 IP；地址栈为 `ipv4`、`ipv6`、`dual` |
-| `port` | integer | 实际监听端口 |
+| `port` | integer | 实际监听端口，显式填写 `1–65535`；省略或非正数使用 `443`，不会随机分配，超过 `65535` 报错 |
 | `enabled` | boolean | 是否启用 |
 | `transport`、`security` | string | 传输及 `none`、`tls`、`reality` 等安全方式 |
 | `cert_id`、`sni`、`alpn` | string | TLS 证书和安全参数 |
-| `flow` | string | 入站默认 VLESS Flow |
+| `flow` | string | 入站默认 VLESS Flow；Xray、sing-box 的 VLESS + TCP + TLS/Reality 均支持 Vision |
 | `ss_method` | string | Shadowsocks 加密方法，默认 `2022-blake3-aes-128-gcm` |
 | `accounts` | object[] | HTTP 入站的用户名密码数组，每项为 `{"user":"用户名","pass":"密码"}` |
 | `allow_transparent` | boolean | HTTP 入站透明转发开关，默认 `false`，按所选内核支持情况使用 |
@@ -99,6 +99,8 @@ curl -X POST "https://monitor.example.com/api/rpc2" \
 | `exclude_from_sub` | boolean | 是否从订阅排除 |
 
 HTTP 协议使用 `http`，传输为 `tcp`，安全方式为 `none` 或 `tls`。保存时会忽略用户名或密码为空的账户，同名账户只保留第一组；没有有效账户时自动生成一组，调用方应读取保存结果。
+
+VLESS 用户的非空 `flow` 覆盖入站默认值，订阅携带最终 Flow。sing-box 使用 `xtls-rprx-vision`，带 Vision 的 `udp443` 形式会转换为此值；WebSocket、其他非 TCP 传输或明文入站不携带 Flow。Reality 缺省目标为 `addons.mozilla.org:443`，SNI 从目标主机名生成。组合与配套版本见[VLESS Vision](/plus/inbounds#vless-vision)。
 
 读取返回会包含配置和版本、创建/更新时间，以及 `accounts`、`allow_transparent` 等字段。Shadowsocks 的 `ss_password` 为读取返回的服务器密钥，不是 `inbound.upsert` 的写入参数；SS2022 用户连接还需要配合用户密钥，应使用订阅生成的完整密码。
 
@@ -136,7 +138,7 @@ HTTP 协议使用 `http`，传输为 `tcp`，安全方式为 `none` 或 `tls`。
 | `network`、`protocol` | string | TCP / UDP 网络与嗅探协议条件 |
 | `port`、`source` | string | 目标端口与来源 IP 条件 |
 
-路由条件与目标必须属于同一节点，字段填写例子见[出站与路由](/plus/forwarding)。
+路由条件与目标必须属于同一节点。不同非空条件之间为“且”，同一字段中逗号分隔的值为“或”；`network`、`protocol` 为空表示不限。普通域名按后缀匹配，也支持 `domain:`、`full:`、`keyword:`、`regexp:` / `regex:` 和 `geosite:`。中国域名和中国 IP 任一命中即直连时，应拆为两条规则，字段示例见[出站与路由](/plus/forwarding#匹配方式)。
 
 ## 用户与套餐字段
 
@@ -148,7 +150,7 @@ HTTP 协议使用 `http`，传输为 `tcp`，安全方式为 `none` 或 `tls`。
 | 用户 | `inbound_ids` | string[]，明确提交该用户完整入口范围 |
 | 用户 | `plan_id` | string，空值会解除套餐关联 |
 | 用户 | `status` | `active`、`disabled`、`expired` |
-| 用户 | `expires_at` | RFC3339 或 `null` |
+| 用户 | `expires_at` | RFC3339 设置时间，`null` 清除；省略保留当前到期时间 |
 | 用户 | `traffic_reset_day` | integer，`0–31`，按北京时间重置 |
 | 用户 | `flow` | string，用户 Flow |
 | 用户 | `rate_limit_bps`、`device_limit` | integer，bit/s 与并发 IP 上限 |
@@ -160,9 +162,23 @@ HTTP 协议使用 `http`，传输为 `tcp`，安全方式为 `none` 或 `tls`。
 
 `user.list` 还返回 `quota_bytes`、`used_bytes`、`plan_name`、`inbound_names`、`online`、`online_ips` 等视图字段。`online_ips` 中包含 `ip` 和 `seen_at`，为近期在线信息。套餐更新会影响当前使用它的用户，续费仅延期。
 
-通过接口创建用户时，`user.upsert` 会生成订阅记录，连接凭据需再调用 `credential.issue`；后台新建用户会自动完成这一步。
+通过接口创建用户时，`user.upsert` 会自动生成订阅记录和 UUID 连接凭据，响应中的 `secret` 为本次签发的明文凭据，无需再调用 `credential.issue`。编辑用户不会重新签发；需要另行签发或更换时，再使用对应凭据方法。
 
-`assignment.modify` 可选参数为 `quota_bytes`、`rate_limit_bps` 和 `device_limit`。省略的字段保持原值；当前 `device_limit` 只有大于 `0` 时才更新，传 `0` 不会清除原限制。到期时间通过 `user.upsert` 的 `expires_at` 设置。
+`user.upsert` 的到期时间按以下方式处理：
+
+<div class="plus-settings-table">
+
+| `expires_at` | 行为 |
+| --- | --- |
+| 省略 | 保留当前到期时间；本次分配套餐生成的到期时间也会保留 |
+| `null` | 清除到期时间，表示不过期 |
+| RFC3339 字符串 | 设置指定时间，例如 `"2026-12-31T23:59:59+08:00"` |
+
+</div>
+
+用户资料、入站授权、套餐、期限、外部链接和新用户凭据在同一事务中保存。编辑仍应提交完整的 `inbound_ids`、`plan_id` 等配置；到期时间的省略行为不代表其他字段也支持局部更新。
+
+`assignment.modify` 可选参数为 `quota_bytes`、`rate_limit_bps` 和 `device_limit`，省略的字段保持原值。`device_limit` 传正整数设置上限，传 `0` 可清除上限，负数报错。到期时间通过 `user.upsert` 的 `expires_at` 设置。
 
 `extra_links` 中每项使用以下字段：
 
@@ -199,6 +215,8 @@ HTTP 协议使用 `http`，传输为 `tcp`，安全方式为 `none` 或 `tls`。
 
 返回证书记录中的 `status`、`last_error`、`not_after`、`fingerprint` 可用于查询结果，还包含 `source`、`root_cert_id`、`share_domain`、`cover_wildcard` 和 `auto_renew`。自动续签通过 `cert.set_auto_renew` 修改；根证书下发记录跟随根证书更新，节点文件由外部工具续期。
 
+`cert.delete` 会拒绝删除仍被入站引用的证书，停用中的入站也计入引用。先在全部关联入站中解除或替换证书绑定并保存，再删除证书，见[删除证书](/plus/certificates#删除证书)。
+
 ### 根域名证书
 
 `admin:nodemgt.root_cert.issue`：
@@ -229,7 +247,7 @@ HTTP 协议使用 `http`，传输为 `tcp`，安全方式为 `none` 或 `tls`。
 | `cf_api_token` | string | Cloudflare Token；空值保留，查询只返回 `cf_api_token_set` |
 | `acme_email` | string | ACME 联系邮箱；保存签发设置时必填，省略保持原值，空字符串会报错 |
 | `clear_issuer` | boolean | `true` 清空已保存的 Cloudflare Token 和 ACME 邮箱；此时忽略同次请求中的这两个字段 |
-| `sub_listen_port` | integer | `0–65535`，`0` 不单独监听 |
+| `sub_listen_port` | integer | `0–65535`，`0` 沿用面板入口；非零时只通过独立端口提供订阅，面板端口上的订阅请求返回 `404` |
 | `sub_public_port` | integer | 对外端口，`0` 跟随监听端口 |
 | `sub_path` | string | 非根路径的订阅前缀 |
 | `sub_public_host` | string | 手动填写的实际对外地址，可包含 HTTP / HTTPS 协议；泛域名证书填写客户端实际访问的主机名 |
@@ -277,6 +295,8 @@ HTTP 协议使用 `http`，传输为 `tcp`，安全方式为 `none` 或 `tls`。
 预览返回 `body`、`content_type`、`client`、`template_id`、`warnings`，以及 `token`、`path`、`url`。`body` 与实际订阅响应一致，分享链接订阅为 Base64 内容；`warnings` 提示所选客户端不兼容的节点等信息。`url` 为订阅基础地址，生成固定客户端链接时追加 `target` 参数。
 
 HTTP / HTTPS 订阅入口为配置后的 `<sub_path><token>`。输出选择顺序为 `target` → `format` → 自动识别 → 已保存格式。`target` 与自动识别使用客户端模板；`v2ray` 返回 Base64 分享链接。原有 `format=clash`、`format=sing-box` 保持节点列表输出，详细行为见[选择格式与预览](/plus/subscriptions#选择格式与预览)。
+
+配置非零 `sub_listen_port` 后，此入口只在独立订阅端口提供；面板 HTTP / HTTPS 端口上的订阅路径返回 `404`，反向代理需回源到独立端口。设为 `0` 时继续沿用面板入口。
 
 无效 Token、停用订阅、停用或到期用户，以及无法生成配置的请求返回 `404`。该入口使用独立订阅 Token，不使用管理员 API Key；响应设置 `Cache-Control: no-store`、`Vary: User-Agent`，并通过 `X-Subscription-Client` 标明选定客户端。
 

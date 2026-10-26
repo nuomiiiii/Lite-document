@@ -22,7 +22,7 @@
 | 内核 | Hysteria2、TUIC、AnyTLS 使用 sing-box；其余默认 Xray，可按页面可选项调整 |
 | 地址栈 | 新建默认“仅 IPv4”，也可选“仅 IPv6”或“双栈” |
 | 监听地址 | 留空跟随地址栈；填写具体 IP 时只绑定该地址 |
-| 端口 | 节点实际监听的端口，可使用随机端口按钮；需与节点其他服务错开 |
+| 端口 | 填写 `1–65535` 的整数，可使用随机端口按钮；填 `0` 不会随机分配，需与节点其他服务错开 |
 | 启用 | 关闭后该入站不再作为启用配置下发 |
 | 订阅排序 | 数字越小越靠前，也可用列表的上下箭头调整 |
 
@@ -49,18 +49,39 @@
 
 常用参数如下：
 
+<div class="plus-settings-table">
+
 | 配置 | 字段与用途 |
 | --- | --- |
 | TLS | 绑定同节点证书，按需填写 SNI、ALPN 和客户端指纹 |
 | Reality | 填写目标站点、服务器名称（SNI）和 Short ID；保存时可自动生成密钥，Short ID 可随机生成 |
-| VLESS Flow | Xray 的 VLESS + TCP + TLS/Reality 可设置 Vision；用户可单独覆盖默认 Flow |
+| VLESS Flow | Xray 与 sing-box 的 VLESS + TCP + TLS/Reality 均可设置 Vision；用户非空 Flow 覆盖入站默认值 |
 | WebSocket | 路径和 Host；经反向代理时与回源配置保持一致 |
 | gRPC | `serviceName` 与 `multiMode` |
 | XHTTP / HTTPUpgrade | 路径、Host；XHTTP 还可选择模式 |
 | TCP 伪装 | 可选 HTTP 伪装及对应 Host |
 | Shadowsocks | 选择加密方法，并使用订阅生成的用户凭据 |
 
-Reality 不使用节点 TLS 证书。目标站点需支持 TLS 1.3 与 HTTP/2，SNI 应与目标证书匹配；不要把它填写成面板证书路径。
+</div>
+
+Reality 不使用节点 TLS 证书。新建时默认目标为 `addons.mozilla.org:443`，SNI 为 `addons.mozilla.org`，也可按节点网络改用其他目标。目标站点需支持 TLS 1.3 与 HTTP/2，SNI 应与目标证书匹配；保存后确认节点能够访问目标站点。
+
+### VLESS Vision
+
+在 VLESS 入站中选择 TCP，并使用 TLS 或 Reality 后，可设置 Flow。Reality 默认使用 `xtls-rprx-vision`；TLS 可按客户端需要选择，留空表示不设置入站默认 Flow。
+
+<div class="plus-settings-table">
+
+| 内核 | 可选 Flow |
+| --- | --- |
+| Xray | 留空、`xtls-rprx-vision`、`xtls-rprx-vision-udp443` |
+| sing-box | 留空、`xtls-rprx-vision` |
+
+</div>
+
+用户的 Flow 非空时优先使用用户设置，否则沿用入站默认值，订阅携带最终 Flow。切换到 sing-box 时，带 Vision 的 `udp443` 形式会转换为 `xtls-rprx-vision`。WebSocket、其他非 TCP 传输或明文入站不使用 Flow。
+
+sing-box Vision 需要配套 Plus Agent `0.0.1.4`。同时更新服务端、后台和 Agent，保存并等待“已生效”后，再让客户端更新订阅。
 
 ## HTTP 账号与透明转发
 

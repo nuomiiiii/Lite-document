@@ -55,7 +55,7 @@ logread -e lite-plus
 ```yaml
 services:
   lite-plus:
-    image: ghcr.io/nuomiiiii/lite-plus:0.0.6
+    image: ghcr.io/nuomiiiii/lite-plus:0.0.7
     container_name: lite-plus
     restart: unless-stopped
     ports:
@@ -77,7 +77,7 @@ docker compose up -d
 ## Docker 从 Lite 升级
 
 1. 停止原 Lite 容器，备份原程序信息及完整宿主机 `data` 目录；外部监控数据库另外备份。
-2. 在原编排中将镜像改为 `ghcr.io/nuomiiiii/lite-plus:0.0.6`。
+2. 在原编排中将镜像改为 `ghcr.io/nuomiiiii/lite-plus:0.0.7`。
 3. 保持原有 `data` 挂载、端口、环境变量和证书挂载，沿用原入口重新创建容器。
 4. 确认原账号、节点、历史数据和 HTTPS 可用，再进入新增的“节点管理”。
 
@@ -110,14 +110,14 @@ Windows 下载对应产物后，在 PowerShell 中运行：
 
 ## 安装或迁移 Plus Agent
 
-节点管理需要 Lite-Plus-agent，当前项目基线为 `0.0.1.1`。先在 Plus“服务器 → 节点配置 → 部署指令”选择系统与安装选项，再复制完整命令执行；不要使用 Lite-agent 的下载源代替。
+节点管理需要 Lite-Plus-agent，当前项目基线为 `0.0.1.4`。先在 Plus“服务器 → 节点配置 → 部署指令”选择系统与安装选项，再复制完整命令执行；不要使用 Lite-agent 的下载源代替。
 
 | 项目 | 默认值 |
 | --- | --- |
 | Linux 服务名 | `lite-plus-agent` |
 | Linux 安装目录 | `/opt/lite-plus-agent` |
 | 程序 | `/opt/lite-plus-agent/Lite-Plus-agent` |
-| Docker 镜像 | `ghcr.io/nuomiiiii/lite-plus-agent:0.0.1.1` |
+| Docker 镜像 | `ghcr.io/nuomiiiii/lite-plus-agent:0.0.1.4` |
 
 已有 Lite-agent 时，在原节点执行 Plus 后台为**原节点**生成的部署指令，保留原节点 Token 与面板地址。默认布局可迁入 Plus 目录与服务名；自定义目录、服务名和证书挂载应按原部署核对。
 
@@ -143,3 +143,7 @@ Plus 节点管理配置、用户、套餐、订阅、订阅模板及其绑定、
 - 使用 HTTP 入站时，确认 Agent 已支持入站账号，再检查账号密码与节点应用结果。
 - Shadowsocks SS2022 重新导入完整订阅或分享链接；修改出站协议后核对对应凭据。
 - 订阅的“对外地址”是否为实际访问地址，泛域名证书应填写具体订阅主机名。开关“复用内置 HTTPS”不会自动补全此值。
+- 配置非零订阅监听端口后，面板 HTTP / HTTPS 入口不再提供订阅。出现 `404` 时，检查订阅反向代理是否回源到独立端口，见[配置订阅入口](/plus/subscriptions#配置订阅入口)。
+- 使用 sing-box VLESS Vision 时，同时更新 Plus 服务端、后台和 Agent `0.0.1.4`，确认下发成功，再更新客户端订阅。
+- 配套 Agent 包含限速单位、双向流量计量、真实在线 IP 和路由匹配修复。更新后核对用户速率、上下行已用量、在线 IP 及分流结果；规则中域名和 IP 同时填写时需同时命中。
+- 核对入站、出站、路由和订阅的启用状态；保存关闭状态后，这些配置会继续保持关闭。
