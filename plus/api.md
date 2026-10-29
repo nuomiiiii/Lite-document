@@ -4,7 +4,9 @@
 
 ## 认证与单位
 
-当前实现允许管理员登录会话或 API Key 调用这些节点管理方法，包含写操作。节点用户凭据、订阅 Token 和 MCP 授权不具备调用权限。这里的 API Key 支持范围仅指 `admin:nodemgt.*`，不扩大共用手册中账号安全、主题、备份和远程授权等接口的权限。
+常规节点管理查询与写操作允许管理员登录会话或 API Key 调用。涉及创建、更新或解除入站防火墙联动，以及删除已联动的入站时，需要管理员登录会话及 `exec` 范围的远程操作授权，API Key 不能完成这些防火墙变更。
+
+节点用户凭据、订阅 Token 和 MCP 授权不具备调用权限。这里的 API Key 支持范围仅指本页节点管理方法，不扩大共用手册中账号安全、主题、备份和远程授权等接口的权限。
 
 - 容量、已用量、加量字段使用整数**字节**。
 - `rate_limit_bps` 使用整数 **bit/s**，例如 `10000000` 表示 `10 Mbit/s`，与通用监控速率字段的字节/秒不同。
@@ -18,10 +20,12 @@
 
 | 方法 | 主要参数 | 返回与用途 |
 | --- | --- | --- |
+| `node.list` | 无 | 已保存的节点出站地址族配置数组 |
+| `node.upsert` | `node_uuid`、`dial_stack` | 保存节点出站地址族并排队下发 |
 | `inbound.list` | 可选 `node_uuid` | 入站数组 |
 | `inbound.upsert` | 入站字段，编辑时带 `id` | 保存后的入站，排队下发 |
 | `inbound.reorder` | `node_uuid`、有序 `ids` | 调整订阅入站顺序 |
-| `inbound.delete` | `id` | 删除入站 |
+| `inbound.delete` | `id`；已联动防火墙时还需 `grant`、`page_id` | 删除入站及授权关系，保留用户、套餐分配、凭据和订阅 |
 | `outbound.list` / `route.list` | 可选 `node_uuid` | 出站 / 路由数组 |
 | `outbound.upsert` / `route.upsert` | 对应配置，编辑时带 `id` | 保存记录并排队下发 |
 | `outbound.delete` / `route.delete` | `id` | 删除对应配置 |
@@ -82,10 +86,11 @@ curl -X POST "https://monitor.example.com/api/rpc2" \
 | `listen`、`stack` | string | 监听 IP；地址栈为 `ipv4`、`ipv6`、`dual` |
 | `port` | integer | 实际监听端口，显式填写 `1–65535`；省略或非正数使用 `443`，不会随机分配，超过 `65535` 报错 |
 | `enabled` | boolean | 是否启用 |
-| `transport`、`security` | string | 传输及 `none`、`tls`、`reality` 等安全方式 |
+| `transport`、`security` | string | 传输及 `none`、`tls`、`reality` 等安全方式；Shadowsocks 的 `transport` 使用 `tcp,udp`、`tcp` 或 `udp`，默认 `tcp,udp` |
 | `cert_id`、`sni`、`alpn` | string | TLS 证书和安全参数 |
 | `flow` | string | 入站默认 VLESS Flow；Xray、sing-box 的 VLESS + TCP + TLS/Reality 均支持 Vision |
 | `ss_method` | string | Shadowsocks 加密方法，默认 `2022-blake3-aes-128-gcm` |
+| `udp_fragment` | boolean | sing-box 中实际监听 UDP 的入站是否允许分片，默认 `false`；其他组合忽略此项 |
 | `accounts` | object[] | HTTP 入站的用户名密码数组，每项为 `{"user":"用户名","pass":"密码"}` |
 | `allow_transparent` | boolean | HTTP 入站透明转发开关，默认 `false`，按所选内核支持情况使用 |
 | `reality_dest`、`reality_server_names`、`reality_short_id` | string | Reality 参数；密钥缺省可由服务端生成 |
@@ -93,18 +98,39 @@ curl -X POST "https://monitor.example.com/api/rpc2" \
 | `http_path`、`http_host`、`http_mode` | string | HTTPUpgrade / XHTTP 参数 |
 | `sniffing`、`route_only` | boolean | 嗅探及仅用于路由，Reality / Vision 会约束后者 |
 | `dest_override` | string | 逗号分隔的嗅探类型 |
-| `sort_index` | integer | 订阅顺序，越小越靠前 |
+| `sort_index` | integer | 越小越靠前，显式 `0` 有效；新建省略追加到全部入站末尾，编辑省略保留原顺序 |
 | `share_strategy` | string | `node`、`listen`、`other`、`none` |
 | `public_host`、`public_port` | string / integer | 生成分享地址使用的公开目标 |
 | `exclude_from_sub` | boolean | 是否从订阅排除 |
+| `firewall_allow` | boolean | 可选，`true` 建立或更新端口放行联动，`false` 解除；省略不改变联动配置 |
+| `grant`、`page_id` | string | 防火墙联动发生变更时，提交管理员会话对应的远程 `exec` 授权与页面标识 |
 
 HTTP 协议使用 `http`，传输为 `tcp`，安全方式为 `none` 或 `tls`。保存时会忽略用户名或密码为空的账户，同名账户只保留第一组；没有有效账户时自动生成一组，调用方应读取保存结果。
 
 VLESS 用户的非空 `flow` 覆盖入站默认值，订阅携带最终 Flow。sing-box 使用 `xtls-rprx-vision`，带 Vision 的 `udp443` 形式会转换为此值；WebSocket、其他非 TCP 传输或明文入站不携带 Flow。Reality 缺省目标为 `addons.mozilla.org:443`，SNI 从目标主机名生成。组合与配套版本见[VLESS Vision](/plus/inbounds#vless-vision)。
 
-读取返回会包含配置和版本、创建/更新时间，以及 `accounts`、`allow_transparent` 等字段。Shadowsocks 的 `ss_password` 为读取返回的服务器密钥，不是 `inbound.upsert` 的写入参数；SS2022 用户连接还需要配合用户密钥，应使用订阅生成的完整密码。
+读取返回会包含配置和版本、创建/更新时间，以及 `accounts`、`allow_transparent`、只读 `firewall_linked` 等字段。Shadowsocks 的网络从 `transport` 读取，也通过该字段写入；`ss_password` 为读取返回的服务器密钥，不是 `inbound.upsert` 的写入参数。SS2022 用户连接还需要配合用户密钥，应使用订阅生成的完整密码。
+
+需要同步联动规则时，明确提交 `firewall_allow`，不要仅修改端口或协议后省略此项。防火墙变更需按管理员远程执行流程完成重新验证；`grant`、`page_id` 不能由 API Key 签发或使用。完整操作见[联动放行端口](/plus/inbounds#联动放行端口)。
 
 节点应用结果需要另外查询 `control.status`，不能仅凭保存接口成功判断已经监听。
+
+## 节点出站地址族
+
+`admin:nodemgt.node.upsert`：
+
+<div class="plus-settings-table">
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `node_uuid` | string | 必填，目标服务器 UUID |
+| `dial_stack` | string | `dual` 双栈、`ipv4` 仅 IPv4、`ipv6` 仅 IPv6、`prefer_ipv4` IPv4 优先、`prefer_ipv6` IPv6 优先 |
+
+</div>
+
+保存返回 `node_uuid`、`dial_stack`、`updated_at`，并向该节点下发。`node.list` 无参数，只返回已保存的配置记录；没有记录的节点按 `dual` 处理。
+
+非 `dual` 设置覆盖出站单独的直连域名策略，同节点 Xray 和 sing-box 共用。使用方法见[节点出站地址族](/plus/forwarding#节点出站地址族)。
 
 ## 出站与路由字段
 
@@ -118,12 +144,14 @@ VLESS 用户的非空 `flow` 覆盖入站默认值，订阅携带最终 Flow。s
 | `enabled` | boolean | 是否启用 |
 | `address`、`dest_port` | string / integer | 目标地址与端口；目标端口字段不是 `port` |
 | `uuid`、`username`、`password`、`ss_method` | string | 按目标协议填写凭据与加密方法 |
-| `transport`、`security`、`sni`、`fingerprint`、`flow` | string | 目标传输与安全参数 |
+| `transport`、`security`、`sni`、`fingerprint`、`flow` | string | 目标传输与安全参数；Shadowsocks 的 `transport` 为 `tcp,udp`、`tcp` 或 `udp`，默认 `tcp,udp` |
 | `ws_path`、`ws_host`、`grpc_service` | string | WebSocket / gRPC 参数 |
 | `reality_public_key`、`reality_short_id`、`spider_x` | string | Reality 客户端参数 |
 | `via_outbound` | string | 同节点前置出站标签，空值表示不使用 |
 | `domain_strategy` | string | 直连域名策略，如 `AsIs`、`UseIPv4` |
 | `source_inbound_id` | string | 从已有入站导入时的来源记录 |
+
+Shadowsocks 出站的网络也从 `transport` 读取和写入。从入站导入时应携带对应网络，配套 Agent `0.0.2.4` 支持应用此项。
 
 `admin:nodemgt.route.upsert`：
 
@@ -252,6 +280,8 @@ VLESS 用户的非空 `flow` 覆盖入站默认值，订阅携带最终 Flow。s
 | `sub_path` | string | 非根路径的订阅前缀 |
 | `sub_public_host` | string | 手动填写的实际对外地址，可包含 HTTP / HTTPS 协议；泛域名证书填写客户端实际访问的主机名 |
 | `sub_reuse_https` | boolean | 是否复用面板内置 HTTPS 的证书与私钥；开启前需配置有效的面板证书，非零订阅监听端口将使用 HTTPS |
+| `sub_publish_name` | boolean | 是否向客户端下发订阅名称，默认 `false`；省略保留，显式 `false` 关闭 |
+| `sub_publish_userinfo` | boolean | 是否下发用户已用量、额度和到期信息，默认 `false`；省略保留，显式 `false` 关闭 |
 
 主控根据证书申请中的 `domain` 自动识别 Cloudflare 区域。Token 的权限及配置操作见[保存签发设置](/plus/certificates#保存签发设置)。
 
@@ -266,6 +296,20 @@ VLESS 用户的非空 `flow` 覆盖入站默认值，订阅携带最终 Flow。s
 | `https_domains` | string[] | 面板证书包含的域名 |
 
 `sub_public_host` 省略时保留原值，传空字符串时清空。开启或关闭复用不会用证书域名覆盖此值；生成订阅地址只使用已填写的对外地址，留空时返回相对路径。修改订阅监听端口、URL 路径或复用开关会重载订阅服务。面板证书通过面板 HTTPS 设置管理，操作步骤见[复用内置 HTTPS](/plus/subscriptions#复用内置-https)。
+
+`settings.get` 同时返回 `sub_publish_name` 与 `sub_publish_userinfo` 的当前值，两个开关独立生效。开启后公开 HTTP / HTTPS 订阅入口按下表增加响应头：
+
+<div class="plus-settings-table">
+
+| 响应头 | 内容 |
+| --- | --- |
+| `Content-Disposition` | 订阅名称作为文件名，中文等字符按 RFC 2231 编码 |
+| `Profile-Title` | `base64:` 加 UTF-8 订阅名称的 Base64；名称为“用户名 · 当前有效套餐名”，无有效套餐时仅用户名 |
+| `Subscription-Userinfo` | `upload=0; download=<总已用字节>; total=<额度字节>`，有到期时间时再附加 `; expire=<Unix秒>` |
+
+</div>
+
+前两个头由 `sub_publish_name` 控制，第三个由 `sub_publish_userinfo` 控制。`download` 承载上下行合计的已用量，`upload=0` 是客户端兼容映射，不能据此拆分真实上传、下载；`total=0` 表示无限额，不过期时省略 `expire`，无可信计量时可省略用量头。外部节点用量不在本地统计中，客户端是否展示取决于其支持情况。
 
 ## 订阅字段与预览
 

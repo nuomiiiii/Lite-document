@@ -36,6 +36,7 @@ const sidebar = [
       { text: "部署与从 Lite 升级", link: "/plus/install" },
       { text: "入站与协议", link: "/plus/inbounds" },
       { text: "出站与路由", link: "/plus/forwarding" },
+      { text: "服务器防火墙", link: "/plus/firewall" },
       { text: "用户与套餐", link: "/plus/users" },
       { text: "节点证书", link: "/plus/certificates" },
       { text: "订阅与外部链接", link: "/plus/subscriptions" },

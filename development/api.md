@@ -70,7 +70,7 @@ Authorization: Bearer <api-key>
 | 通知与监测 | `/api/admin/notification/*`、`/api/admin/ping/*`、`/api/admin/return-route/*`；对应 `admin:*` 方法 | 可查询、配置通知规则、Ping 任务和回程线路 |
 | 日志与维护 | `/api/admin/logs`、`/api/admin/database/size`、`/api/admin/database/vacuum`、`/api/admin/clipboard/*`、`/api/admin/session/*` | 可查询日志、维护数据库空间、管理命令剪贴板和会话 |
 | 非敏感设置 | `GET /api/admin/settings/*`、非敏感的 `POST /api/admin/settings/`；对应 `admin:getSettings`、`admin:setDashboardSettings`、`admin:setXtermjsSettings` 等方法 | `admin:editSettings` 只能提交未列入限制表的字段；OIDC 提供方写入仍需管理员登录会话 |
-| 节点管理 <PlusBadge /> | `admin:nodemgt.*` | Plus 专属，支持入站、出站、路由、用户、套餐、证书和订阅等读写操作，参数见[节点管理接口](/plus/api) |
+| 节点管理 <PlusBadge /> | `admin:nodemgt.*` | Plus 专属，支持节点出站地址族、入站、出站、路由、用户、套餐、证书和订阅等常规读写；涉及入站防火墙联动变更时需管理员会话与远程执行授权，见[节点管理接口](/plus/api#认证与单位) |
 
 例如，使用 API Key 查询仪表盘：
 
@@ -366,7 +366,7 @@ socket.addEventListener("message", (event) => {
 | `common:*` | 访客 | 主题常用节点与记录接口 |
 | `admin:*` | 管理员；部分方法允许 API Key | 后台管理，受上述 API Key 权限限制约束 |
 
-<PlusBadge /> Plus 的 `admin:nodemgt.*` 方法由管理员会话或 API Key 调用，完整参数见[节点管理接口](/plus/api)。
+<PlusBadge /> Plus 的 `admin:nodemgt.*` 常规方法允许管理员会话或 API Key 调用；涉及入站防火墙联动变更时需要管理员会话及远程执行授权。完整参数见[节点管理接口](/plus/api)。
 
 稳定公共方法：
 
