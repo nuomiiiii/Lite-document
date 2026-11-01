@@ -83,7 +83,7 @@ curl -X POST "https://monitor.example.com/api/rpc2" \
 | `id` | string | 新建可省略，编辑传原 ID |
 | `node_uuid`、`name` | string | 必填，节点 UUID 与名称 |
 | `protocol`、`core` | string | 协议与 `xray` / `sing-box` 内核 |
-| `listen`、`stack` | string | 监听 IP；地址栈为 `ipv4`、`ipv6`、`dual` |
+| `listen`、`stack` | string | 监听 IP；地址栈为 `ipv4`、`ipv6`、`dual`，须与节点已上报的 IP 对应，双栈需同时具备 IPv4 与 IPv6 |
 | `port` | integer | 实际监听端口，显式填写 `1–65535`；省略或非正数使用 `443`，不会随机分配，超过 `65535` 报错 |
 | `enabled` | boolean | 是否启用 |
 | `transport`、`security` | string | 传输及 `none`、`tls`、`reality` 等安全方式；Shadowsocks 的 `transport` 使用 `tcp,udp`、`tcp` 或 `udp`，默认 `tcp,udp` |
@@ -100,12 +100,15 @@ curl -X POST "https://monitor.example.com/api/rpc2" \
 | `dest_override` | string | 逗号分隔的嗅探类型 |
 | `sort_index` | integer | 越小越靠前，显式 `0` 有效；新建省略追加到全部入站末尾，编辑省略保留原顺序 |
 | `share_strategy` | string | `node`、`listen`、`other`、`none` |
-| `public_host`、`public_port` | string / integer | 生成分享地址使用的公开目标 |
+| `public_host` | string | 分享地址为 `other` 时填写客户端可达的域名或 IP |
+| `public_port` | integer | 分享链接和订阅使用的端口；`0` 跟随监听端口，非零时填写 `1–65535`。新建省略使用 `0`，编辑省略保留原值，显式传 `0` 恢复跟随监听端口 |
 | `exclude_from_sub` | boolean | 是否从订阅排除 |
 | `firewall_allow` | boolean | 可选，`true` 建立或更新端口放行联动，`false` 解除；省略不改变联动配置 |
 | `grant`、`page_id` | string | 防火墙联动发生变更时，提交管理员会话对应的远程 `exec` 授权与页面标识 |
 
 HTTP 协议使用 `http`，传输为 `tcp`，安全方式为 `none` 或 `tls`。保存时会忽略用户名或密码为空的账户，同名账户只保留第一组；没有有效账户时自动生成一组，调用方应读取保存结果。
+
+地址栈保存校验使用主控记录的节点上报地址，缺少对应 IP 时返回 `host has no IPv4` 或 `host has no IPv6`。`public_port` 仅改变生成的客户端目标，不改变实际 `port`、主机防火墙或外部端口映射。
 
 VLESS 用户的非空 `flow` 覆盖入站默认值，订阅携带最终 Flow。sing-box 使用 `xtls-rprx-vision`，带 Vision 的 `udp443` 形式会转换为此值；WebSocket、其他非 TCP 传输或明文入站不携带 Flow。Reality 缺省目标为 `addons.mozilla.org:443`，SNI 从目标主机名生成。组合与配套版本见[VLESS Vision](/plus/inbounds#vless-vision)。
 
@@ -140,7 +143,7 @@ VLESS 用户的非空 `flow` 覆盖入站默认值，订阅携带最终 Flow。s
 | --- | --- | --- |
 | `id` | string | 新建省略，编辑传原 ID |
 | `node_uuid`、`name` | string | 必填，所属节点与该节点唯一的出站标签 |
-| `core`、`protocol` | string | 内核与协议；直连为 `freedom`，阻断为 `blackhole` |
+| `core`、`protocol` | string | 内核与协议；Hysteria2 为 `hysteria2`，TUIC 为 `tuic`，均使用 `sing-box`；直连为 `freedom`，阻断为 `blackhole` |
 | `enabled` | boolean | 是否启用 |
 | `address`、`dest_port` | string / integer | 目标地址与端口；目标端口字段不是 `port` |
 | `uuid`、`username`、`password`、`ss_method` | string | 按目标协议填写凭据与加密方法 |
@@ -151,7 +154,20 @@ VLESS 用户的非空 `flow` 覆盖入站默认值，订阅携带最终 Flow。s
 | `domain_strategy` | string | 直连域名策略，如 `AsIs`、`UseIPv4` |
 | `source_inbound_id` | string | 从已有入站导入时的来源记录 |
 
-Shadowsocks 出站的网络也从 `transport` 读取和写入。从入站导入时应携带对应网络，配套 Agent `0.0.2.4` 支持应用此项。
+Shadowsocks 出站的网络也从 `transport` 读取和写入。从入站导入时应携带对应网络，配套 Agent `0.0.2.4` 及以上支持应用此项。
+
+Hysteria2 / TUIC 出站使用以下参数，配套当前 Lite-Plus-agent `0.0.3.1`：
+
+<div class="plus-settings-table">
+
+| 协议 | `core` | 凭据 | 传输与安全 |
+| --- | --- | --- | --- |
+| `hysteria2` | `sing-box` | `password` | `transport: "quic"`、`security: "tls"`，按目标填写 `sni` |
+| `tuic` | `sing-box` | `uuid` 和 `password` | `transport: "quic"`、`security: "tls"`，按目标填写 `sni` |
+
+</div>
+
+保存这两种协议时，服务端会将内核设为 `sing-box`、传输设为 `quic`；`security` 省略或为 `none` 时改为 `tls`。从分享链接导入支持 `hysteria2://`、`hy2://`、`tuic://`；从入站导入需携带对应用户的连接密码，TUIC 还需 UUID。AnyTLS 同样固定使用 sing-box，但传输为 TCP。
 
 `admin:nodemgt.route.upsert`：
 

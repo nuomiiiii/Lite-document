@@ -20,6 +20,8 @@
 
 保存后等待节点“已生效”，再验证实际出口。选择仅 IPv4 / IPv6 前，确认目标与节点具备对应网络。
 
+使用当前配套 Agent 时，开启用户在线 IP 限制后，出站地址族设置对 TCP 与 UDP 连接也生效。更新后可分别验证两种网络的实际出口。
+
 该设置与入站监听地址栈、Agent 连接主控的地址偏好分别配置。节点选择非“双栈”时，会覆盖出站单独设置的直连域名策略；需要按出站分别控制解析时，先将节点恢复为“双栈”。
 
 ## 出站
@@ -32,7 +34,8 @@
 | --- | --- |
 | 服务器 | 出站配置所属节点 |
 | 出站标签 | 同一节点必须唯一；不能使用保留名称 `direct`、`block` |
-| 协议 | VLESS、VMess、Trojan、Shadowsocks、AnyTLS、SOCKS、HTTP，以及直连和阻断类型 |
+| 协议 | VLESS、VMess、Trojan、Shadowsocks、Hysteria2、TUIC、AnyTLS、SOCKS、HTTP，以及直连和阻断类型 |
+| 内核 | Hysteria2、TUIC、AnyTLS 选择 sing-box 后可用；Xray 只显示其支持的协议 |
 | 地址与目标端口 | 出口服务器的可达地址和端口 |
 | 凭据 | 按目标协议填写 UUID、用户名、密码或加密方法 |
 | 传输与安全 | 与目标入口的 TCP、WebSocket、gRPC、TLS 或 Reality 等配置一致 |
@@ -44,14 +47,31 @@
 
 ### 从已有配置导入
 
-- **粘贴分享链接**：支持从 `vless://`、`vmess://`、`trojan://`、`ss://`、`anytls://` 自动填入目标地址、传输和安全参数。
-- **从入站导入**：选择已有入站作为转发目标；该入站应先设置可用的分享地址。HTTP 入站会带入首组账户的用户名和密码；Shadowsocks 会带入 TCP / UDP 网络选项，SS2022 还会组合服务器密钥与用户密钥，生成目标所需的完整密码。
+- **粘贴分享链接**：支持从 `vless://`、`vmess://`、`trojan://`、`ss://`、`anytls://`、`hysteria2://`（或 `hy2://`）、`tuic://` 自动填入目标地址、传输和安全参数。
+- **从入站导入**：选择已有入站作为转发目标；该入站应先设置可用的分享地址。HTTP 入站会带入首组账户的用户名和密码；Shadowsocks 会带入 TCP / UDP 网络选项，SS2022 还会组合服务器密钥与用户密钥。Hysteria2 会带入连接密码，TUIC 会同时带入 UUID 和连接密码。
 
 导入后检查凭据、节点归属、标签和前置出站，再保存。导入只是填写表单，保存并收到节点确认后才应用。
 
+### Hysteria2 与 TUIC 出站
+
+选择 sing-box 后再选择 Hysteria2 或 TUIC，填写目标地址和端口。两者使用 QUIC 与 TLS，目标应能通过 UDP 到达，SNI 与目标证书保持一致。
+
+<div class="plus-settings-table">
+
+| 协议 | 凭据 |
+| --- | --- |
+| Hysteria2 | 填写目标入口的连接密码 |
+| TUIC | 同时填写目标入口的 UUID 和连接密码 |
+
+</div>
+
+使用 Lite-Plus `0.1.5` 与 Lite-Plus-agent `0.0.3.1` 配套配置。导入分享链接后也应核对凭据与 TLS 参数，保存并等待“已生效”，再测试转发与路由。
+
+### 其他协议的导入检查
+
 导入 VLESS 目标或切换内核时，Flow 会按目标内核支持的选项调整。sing-box 使用 `xtls-rprx-vision`，从 Xray 导入的 Vision `udp443` 形式会转换为此值；重新核对目标入口的配置后再保存，见[VLESS Vision](/plus/inbounds#vless-vision)。
 
-Shadowsocks 的网络、加密方法和密码必须与目标入口一致，SS2022 不应只填写 UUID。配套 Agent `0.0.2.4` 支持应用出站网络选项；导入后仍应检查节点应用结果。编辑已有出站并切换协议时，重新核对新协议的凭据、传输和安全配置；非 Shadowsocks 出站无需填写 Shadowsocks 加密方法。
+Shadowsocks 的网络、加密方法和密码必须与目标入口一致，SS2022 不应只填写 UUID。配套 Agent `0.0.2.4` 及以上支持应用出站网络选项；导入后仍应检查节点应用结果。编辑已有出站并切换协议时，重新核对新协议的凭据、传输和安全配置；非 Shadowsocks 出站无需填写 Shadowsocks 加密方法。
 
 ## 路由
 

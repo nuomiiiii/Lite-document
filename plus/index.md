@@ -6,11 +6,15 @@ Lite-Plus 在 Lite 的监控、告警、账单、远程管理和 MCP 功能基�
 
 ## 当前项目基线
 
+<div class="plus-settings-table">
+
 | 组件 | 版本 | 用途 |
 | --- | --- | --- |
-| Lite-Plus | `0.1.2` | 服务端、节点管理后台与服务器防火墙 |
-| Lite-Plus-agent | `0.0.2.4` | 监控采集、同进程 Xray / sing-box 节点管理与防火墙下发 |
+| Lite-Plus | `0.1.5` | 服务端、节点管理后台与服务器防火墙 |
+| Lite-Plus-agent | `0.0.3.1` | 监控采集、同进程 Xray / sing-box 节点管理与防火墙下发 |
 | Lite-Theme | `1.2.9` | 共用公开主题 |
+
+</div>
 
 以下说明按当前项目代码编写。实际安装产物和构建码以对应项目 Release 及后台“关于”页面为准。
 
@@ -23,8 +27,8 @@ Lite-Plus 在 Lite 的监控、告警、账单、远程管理和 MCP 功能基�
 | 页面 | 用途 |
 | --- | --- |
 | 概览 | 查看入站、用户和证书数量、内核版本、待下发及失败情况，按服务器设置[出站地址族](/plus/forwarding#节点出站地址族) |
-| [入站](/plus/inbounds) | 设置协议、监听、传输与安全，支持 Shadowsocks TCP / UDP、sing-box UDP 分片和联动放行端口 |
-| [出站](/plus/forwarding#出站) | 配置额外出口、导入分享链接或设置前置出站 |
+| [入站](/plus/inbounds) | 按节点已上报地址选择地址栈，设置监听、公开地址与端口、传输、安全和联动放行 |
+| [出站](/plus/forwarding#出站) | 配置额外出口，支持 Hysteria2 / TUIC、导入分享链接或已有入站，以及前置出站 |
 | [路由](/plus/forwarding#路由) | 按入站、域名、IP、网络、端口等条件选择出口 |
 | [用户](/plus/users#节点用户) | 分配可用入站、套餐、期限、限速和在线 IP 上限 |
 | [套餐](/plus/users#套餐) | 设置流量额度、天数、限速和在线 IP 模板 |
