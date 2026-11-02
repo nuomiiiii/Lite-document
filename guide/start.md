@@ -12,6 +12,8 @@
 
 ## 先选择部署方式
 
+<div class="deployment-table">
+
 | 场景 | 推荐方式 | 说明 |
 | --- | --- | --- |
 | 已经使用 Docker 或 1Panel | [Docker 部署](/install/docker) | 更新和回退最直观，务必持久化 `data` |
@@ -19,6 +21,8 @@
 | OpenWrt / iStoreOS + procd | [Linux 脚本安装](/install/linux) | 下载脚本后用 `sh` 执行，需匹配官方支持的 CPU 架构 |
 | Windows 或特殊架构 | [二进制安装](/install/binary) | 手动管理进程与数据目录 |
 | Lite-Plus 新安装或从 Lite 升级 <PlusBadge /> | [Plus 部署](/plus/install) | 使用 Plus 专属脚本、镜像与 Agent |
+
+</div>
 
 新安装的默认 Web 端口为 `27777`。首次打开 `http://服务器地址:27777` 后，按五步引导依次完成欢迎、管理员、站点信息、指标数据库和确认。未初始化时即使先访问公开大屏，也会自动进入安装引导。
 

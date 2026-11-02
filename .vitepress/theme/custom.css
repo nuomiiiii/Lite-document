@@ -155,7 +155,8 @@ body {
 }
 
 .vp-doc .dashboard-presets-table :is(th, td):first-child,
-.vp-doc .notification-channels-table :is(th, td):first-child {
+.vp-doc .notification-channels-table :is(th, td):first-child,
+.vp-doc .deployment-table :is(th, td):nth-child(2) {
   white-space: nowrap;
   overflow-wrap: normal;
 }
@@ -251,10 +252,11 @@ body {
   .VPHome .VPHero.has-image .main .tagline {
     margin: 0 auto;
     padding-top: 20px;
-    max-width: 760px;
+    max-width: none;
     line-height: 30px;
     font-size: 18px;
     text-align: center;
+    white-space: nowrap;
   }
 
   .VPHome .VPHero.has-image .main .actions {
