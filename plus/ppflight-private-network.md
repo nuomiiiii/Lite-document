@@ -254,8 +254,6 @@ Global 的私网入站只授权给中转专用用户，普通客户端用户仅�
 
 连接优化机节点后，让浏览器通过该节点访问 [IPLark](https://iplark.com/)，查看当前出口 IP。显示为 **Global 的公网 IP**，即可确认流量已通过 Global 落地。
 
-如需对优化机或 Global 落地机进行 TCP 调优，见 [TCP 调优](/guide/tcp-tuning)。
-
 ## 常见问题
 
 <div class="plus-settings-table">

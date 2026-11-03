@@ -48,7 +48,6 @@ const sidebar = [
     text: 'PPFlight <span class="hot-badge" aria-label="热门教程">HOT</span>',
     items: [
       { text: "内网中转落地", link: "/plus/ppflight-private-network" },
-      { text: "TCP 调优", link: "/guide/tcp-tuning" },
     ],
   },
   {
