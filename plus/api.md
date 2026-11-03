@@ -192,7 +192,7 @@ VLESS 用户的非空 `flow` 覆盖入站默认值，订阅携带最终 Flow。s
 }
 ```
 
-保存返回转发视图，并向相关节点排队下发。需要查询 `control.status` 确认实际生效。
+保存返回转发视图，只向实际配置发生变化的节点排队下发；重复保存相同配置不会新增下发。增加线路节点时，已有线路和落地配置未改变就不会重复下发；落地新增中转授权、凭据合并或连接参数变化时，会向需要更新的节点下发。需要查询各相关节点的 `control.status` 确认实际生效。
 
 ### 查询返回与删除
 
@@ -273,7 +273,7 @@ VLESS 用户的非空 `flow` 覆盖入站默认值，订阅携带最终 Flow。s
 | `chain_route_in_use` | 线路入站已有手动路由引用 |
 | `chain_outbound_in_use` | 线路入站已有导入出站引用 |
 | `chain_in_use` | 手动配置尝试占用已加入转发的线路入站 |
-| `chain_managed` | 尝试单独删除由转发维护的自动出站或路由 |
+| `chain_managed` | 尝试单独删除由转发维护的自动出站或路由，或由手动路由维护的自动选路出站组 |
 
 </div>
 
@@ -296,7 +296,16 @@ VLESS 用户的非空 `flow` 覆盖入站默认值，订阅携带最终 Flow。s
 | `domain_strategy` | string | 直连域名策略，如 `AsIs`、`UseIPv4` |
 | `source_inbound_id` | string | 从已有入站导入时的来源记录 |
 
-`outbound.list` 返回只读 `chain_managed`；`true` 表示由“转发”自动管理。该标记不是 `outbound.upsert` 的写入参数。
+`outbound.list` 返回以下只读标记，后台普通出站列表会隐藏任一标记为 `true` 的记录。这些标记不是 `outbound.upsert` 的写入参数。
+
+<div class="plus-settings-table">
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `chain_managed` | boolean | 由“转发”生成，通过对应 `chain.upsert` / `chain.delete` 维护 |
+| `route_managed` | boolean | 由手动路由的主备选路生成，通过对应 `route.upsert` / `route.delete` 维护 |
+
+</div>
 
 Shadowsocks 出站的网络也从 `transport` 读取和写入。从入站导入时应携带对应网络，配套 Agent `0.0.2.4` 及以上支持应用此项。
 
@@ -315,16 +324,55 @@ Hysteria2 / TUIC 出站使用以下参数，配套当前 Lite-Plus-agent `0.0.3.
 
 `admin:nodemgt.route.upsert`：
 
+<div class="plus-settings-table">
+
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `id`、`node_uuid`、`name` | string | 记录 ID、所属节点和规则名称；新建省略 ID |
 | `priority` | integer | 越小越先匹配 |
 | `enabled` | boolean | 是否启用 |
 | `inbound_id` | string | 空值匹配节点全部入站，也可限定一个入站 |
-| `outbound_id` | string | 必填，目标出站或节点默认 `direct` / `block` |
+| `outbound_id` | string | 必填，单出站或主出站 ID；也可为节点默认 `direct` / `block` |
+| `strategy` | string | `none` 使用单个出站，`failover` 主备；省略或其他值按 `none` 处理，不支持 `urltest` |
+| `backup_outbound_id` | string | 主备时填写与主出站不同的同节点出站 ID；也可传 `direct` 表示直连备选 |
+| `backup_direct` | boolean | 主备时是否以直连作为备选；省略时由 `backup_outbound_id: "direct"` 推断 |
+| `fallback_direct` | boolean | 主、备均不可用时是否回退到当前节点直连；默认 `false`，备选已为直连时不启用 |
 | `domain`、`ip` | string | 逗号分隔的域名、IP 或 Geo 条件 |
 | `network`、`protocol` | string | TCP / UDP 网络与嗅探协议条件 |
 | `port`、`source` | string | 目标端口与来源 IP 条件 |
+
+</div>
+
+单出站传 `strategy: "none"`。主备传 `strategy: "failover"`，并填写备出站或启用 `backup_direct`；备出站为空或与主出站相同会返回 `route_backup_required`。主、备不能引用转发或其他路由自动生成的出站组。
+
+例如，将指定入站访问 `example.com` 的流量交给主备出站：
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "admin:nodemgt.route.upsert",
+  "params": {
+    "node_uuid": "<节点 UUID>",
+    "name": "example.com 主备",
+    "inbound_id": "<入站 ID>",
+    "outbound_id": "<主出站 ID>",
+    "strategy": "failover",
+    "backup_outbound_id": "<备出站 ID>",
+    "backup_direct": false,
+    "fallback_direct": false,
+    "domain": "example.com",
+    "priority": 100,
+    "enabled": true
+  }
+}
+```
+
+需要直连备选时，传 `backup_direct: true`；需要主、备出站均失败后再直连时，保留两个出站 ID 并传 `fallback_direct: true`。直连的实际出口为本条路由所属节点。
+
+`route.list` 及保存结果返回 `strategy`、`outbound_id`、`backup_outbound_id`、`backup_direct` 和 `fallback_direct`；其中 `outbound_id` 始终是单出站或主出站，直连备选的 `backup_outbound_id` 为 `direct`。原始 `rule_json` 中还可能包含内部的 `primary_outbound_id` 和 `group_outbound_id`；编辑表单应使用返回的顶层字段，不能把自动出站组 ID 当作主出站提交。
+
+改为单出站或删除路由时，会清理对应自动选路出站组。删除被主备路由引用的主出站或备出站时，也会删除引用它的路由和自动出站组，另一个手动出站保留。
 
 路由条件与目标必须属于同一节点。不同非空条件之间为“且”，同一字段中逗号分隔的值为“或”；`network`、`protocol` 为空表示不限。普通域名按后缀匹配，也支持 `domain:`、`full:`、`keyword:`、`regexp:` / `regex:` 和 `geosite:`。中国域名和中国 IP 任一命中即直连时，应拆为两条规则，字段示例见[出站与路由](/plus/forwarding#匹配方式)。
 
@@ -352,7 +400,7 @@ Hysteria2 / TUIC 出站使用以下参数，配套当前 Lite-Plus-agent `0.0.3.
 
 `user.list` 还返回 `quota_bytes`、`used_bytes`、`plan_name`、`inbound_names`、`online`、`online_ips` 等视图字段。`online_ips` 中包含 `ip` 和 `seen_at`，为近期在线信息。套餐更新会影响当前使用它的用户，续费仅延期。
 
-转发自动创建的 `kind: "relay"` 中转身份不会出现在 `user.list` 中，也不生成普通用户订阅；通过转发接口维护关联关系即可。
+多条转发与多个落地共用一个自动维护的中转账号。`kind: "relay"` 或用户名以 `__relay__` 开头的中转账号不会出现在 `user.list` 和 `sub.list` 中，也不生成普通用户订阅；读取订阅列表时会清理旧中转订阅。通过转发接口维护关联关系即可。
 
 通过接口创建用户时，`user.upsert` 会自动生成订阅记录和 UUID 连接凭据，响应中的 `secret` 为本次签发的明文凭据，无需再调用 `credential.issue`。编辑用户不会重新签发；需要另行签发或更换时，再使用对应凭据方法。
 
