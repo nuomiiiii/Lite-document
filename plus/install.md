@@ -55,7 +55,7 @@ logread -e lite-plus
 ```yaml
 services:
   lite-plus:
-    image: ghcr.io/nuomiiiii/lite-plus:0.1.5
+    image: ghcr.io/nuomiiiii/lite-plus:0.1.6
     container_name: lite-plus
     restart: unless-stopped
     ports:
@@ -77,7 +77,7 @@ docker compose up -d
 ## Docker 从 Lite 升级
 
 1. 停止原 Lite 容器，备份原程序信息及完整宿主机 `data` 目录；外部监控数据库另外备份。
-2. 在原编排中将镜像改为 `ghcr.io/nuomiiiii/lite-plus:0.1.5`。
+2. 在原编排中将镜像改为 `ghcr.io/nuomiiiii/lite-plus:0.1.6`。
 3. 保持原有 `data` 挂载、端口、环境变量和证书挂载，沿用原入口重新创建容器。
 4. 确认原账号、节点、历史数据和 HTTPS 可用，再进入新增的“节点管理”。
 
@@ -112,14 +112,14 @@ Windows 下载对应产物后，在 PowerShell 中运行：
 
 ## 安装或迁移 Plus Agent
 
-节点管理需要 Lite-Plus-agent，当前项目基线为 `0.0.3.1`。先在 Plus“服务器 → 节点配置 → 部署指令”选择系统与安装选项，再复制完整命令执行；不要使用 Lite-agent 的下载源代替。
+节点管理需要 Lite-Plus-agent，当前项目基线为 `0.0.3.2`。先在 Plus“服务器 → 节点配置 → 部署指令”选择系统与安装选项，再复制完整命令执行；不要使用 Lite-agent 的下载源代替。
 
 | 项目 | 默认值 |
 | --- | --- |
 | Linux 服务名 | `lite-plus-agent` |
 | Linux 安装目录 | `/opt/lite-plus-agent` |
 | 程序 | `/opt/lite-plus-agent/Lite-Plus-agent` |
-| Docker 镜像 | `ghcr.io/nuomiiiii/lite-plus-agent:0.0.3.1` |
+| Docker 镜像 | `ghcr.io/nuomiiiii/lite-plus-agent:0.0.3.2` |
 
 已有 Lite-agent 时，在原节点执行 Plus 后台为**原节点**生成的部署指令，保留原节点 Token 与面板地址。默认布局可迁入 Plus 目录与服务名；自定义目录、服务名和证书挂载应按原部署核对。
 
@@ -146,7 +146,8 @@ Plus 节点管理配置、节点出站地址族、防火墙配置、用户、套
 - Shadowsocks SS2022 重新导入完整订阅或分享链接；修改出站协议后核对对应凭据。
 - 订阅的“对外地址”是否为实际访问地址，泛域名证书应填写具体订阅主机名。开关“复用内置 HTTPS”不会自动补全此值。
 - 配置非零订阅监听端口后，面板 HTTP / HTTPS 入口不再提供订阅。出现 `404` 时，检查订阅反向代理是否回源到独立端口，见[配置订阅入口](/plus/subscriptions#配置订阅入口)。
-- 服务端与后台更新到 `0.1.5`，配套 Agent 更新到 `0.0.3.1`。使用 Hysteria2 / TUIC 出站时选择 sing-box，核对目标密码、TUIC UUID 和 TLS 参数，并重新获取分享链接或订阅。
+- 服务端与后台更新到 `0.1.6`，配套 Agent 更新到 `0.0.3.2`。使用 Hysteria2 / TUIC 出站时选择 sing-box，核对目标密码、TUIC UUID 和 TLS 参数，并重新获取分享链接或订阅。
+- 使用[转发](/plus/chains)时，检查线路、落地入站及选路方式，等待相关节点“已生效”；已有手动出站和路由时，先解除线路入站的占用，再切换为自动转发。
 - 编辑入站时，核对节点已上报的 IPv4 / IPv6、地址栈和公开端口；未填写公开端口时沿用监听端口。Shadowsocks 的 TCP / UDP 网络和 sing-box UDP 分片按原用途检查。
 - 在“远程管理 → 防火墙”检查实际地址栈、后端与下发状态；需要联动入站放行时，检查远程控制和身份验证。已有主机默认拒绝规则时，从外部验证端口可达；旧 Agent 出现规则反复写入或额外负载时先更新配套 Agent。
 - 在“节点管理 → 概览”核对出站地址族，默认“双栈”；非默认值会覆盖出站单独设置的直连域名策略。开启在线 IP 限制后，也应验证 TCP 和 UDP 的实际出口。

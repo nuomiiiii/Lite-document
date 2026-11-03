@@ -138,14 +138,18 @@ Cloudflare 中的源站服务地址应填写同一 Docker 网络内的 Lite 服�
 
 为 Web 页面启用 Access 后，浏览器、Agent 与 MCP 客户端需要分别满足各自的访问策略。Lite `2.3.9` 使用以下连接路径：
 
+<div class="access-paths-table">
+
 | 用途 | 路径 | Access 配置 |
 | --- | --- | --- |
-| 浏览器远程终端与文件 | `/api/admin/client/remote` 及其子路径 | 允许已通过 Access 登录的浏览器访问，并支持 WebSocket |
-| Agent 上报与任务 | `/api/clients/v2/rpc` | 使用 Service Auth，允许 Agent 的 Service Token |
-| Agent 远程连接 | `/api/clients/remote` | 使用与 Agent 上报相同的 Service Auth 凭据 |
-| 公开大屏实时状态与 RPC | `/api/clients`、`/api/rpc2` | 按该站点面向访客或登录用户的访问策略配置 |
-| MCP 服务与授权发现 | `/mcp`、`/.well-known/oauth-protected-resource`、`/.well-known/oauth-protected-resource/mcp`、`/.well-known/oauth-authorization-server` | 允许 MCP 客户端访问并保留 Authorization 请求头，不缓存响应 |
-| MCP 客户端注册与授权 | `/oauth/register`、`/oauth/authorize`、`/oauth/token`、`/oauth/revoke` | 同时满足客户端请求和浏览器授权跳转，不能只放行后台网页 |
+| 浏览器终端与文件 | <div class="access-path-list"><code>/api/admin/client/remote</code><span>及其子路径</span></div> | 允许已通过 Access 登录的浏览器访问，并支持 WebSocket |
+| Agent 上报与任务 | <div class="access-path-list"><code>/api/clients/v2/rpc</code></div> | 使用 Service Auth，允许 Agent 的 Service Token |
+| Agent 远程连接 | <div class="access-path-list"><code>/api/clients/remote</code></div> | 使用与 Agent 上报相同的 Service Auth 凭据 |
+| 大屏实时状态与 RPC | <div class="access-path-list"><code>/api/clients</code><code>/api/rpc2</code></div> | 按该站点面向访客或登录用户的访问策略配置 |
+| MCP 服务与授权发现 | <div class="access-path-list"><code>/mcp</code><code>/.well-known/oauth-protected-resource</code><code>/.well-known/oauth-protected-resource/mcp</code><code>/.well-known/oauth-authorization-server</code></div> | 允许 MCP 客户端访问并保留 Authorization 请求头，不缓存响应 |
+| MCP 注册与授权 | <div class="access-path-list"><code>/oauth/register</code><code>/oauth/authorize</code><code>/oauth/token</code><code>/oauth/revoke</code></div> | 同时满足客户端请求和浏览器授权跳转，不能只放行后台网页 |
+
+</div>
 
 Agent 中需同时配置 Client ID 和 Client Secret，见 [Agent 的 Cloudflare Access 配置](/remote/agent#cloudflare-access)。浏览器终端应沿用正常的 Access 登录策略，不需要为了排查而把整段管理接口设为 Bypass；Lite 自身的登录、重新验证和远程权限检查仍然生效。
 

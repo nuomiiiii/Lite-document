@@ -26,6 +26,9 @@
 | `inbound.upsert` | 入站字段，编辑时带 `id` | 保存后的入站，排队下发 |
 | `inbound.reorder` | `node_uuid`、有序 `ids` | 调整订阅入站顺序 |
 | `inbound.delete` | `id`；已联动防火墙时还需 `grant`、`page_id` | 删除入站及授权关系，保留用户、套餐分配、凭据和订阅 |
+| `chain.list` | 可选 `node_uuid` | 转发数组，按线路或落地关联节点筛选 |
+| `chain.upsert` | `source_inbound_ids`、`landing_inbound_ids`、选路字段，编辑时带 `id` | 保存转发，自动维护中转凭据、出站和路由，并排队下发 |
+| `chain.delete` | `id` | 删除转发及关联自动配置，返回 `{"ok":true}` |
 | `outbound.list` / `route.list` | 可选 `node_uuid` | 出站 / 路由数组 |
 | `outbound.upsert` / `route.upsert` | 对应配置，编辑时带 `id` | 保存记录并排队下发 |
 | `outbound.delete` / `route.delete` | `id` | 删除对应配置 |
@@ -135,6 +138,145 @@ VLESS 用户的非空 `flow` 覆盖入站默认值，订阅携带最终 Flow。s
 
 非 `dual` 设置覆盖出站单独的直连域名策略，同节点 Xray 和 sing-box 共用。使用方法见[节点出站地址族](/plus/forwarding#节点出站地址族)。
 
+## 转发字段
+
+后台操作见[转发](/plus/chains)。这组方法沿用本页的管理员会话或 API Key 认证，不会自动修改主机防火墙。
+
+### 创建与编辑
+
+`admin:nodemgt.chain.upsert`：
+
+<div class="plus-settings-table">
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 新建省略，编辑传原转发 ID |
+| `name` | string | 转发名称 |
+| `source_inbound_ids` | string[] | 必填，完整的线路入站 ID 数组，至少一个 |
+| `landing_inbound_ids` | string[] | 必填，落地入站 ID 数组；主备时按主、备顺序排列 |
+| `strategy` | string | `none` 单落地、`failover` 主备、`urltest` 按探测延迟选路 |
+| `backup_direct` | boolean | 主备时是否以节点默认直连作为备选；此时只传主落地 |
+| `fallback_direct` | boolean | 两个或多个落地均不可用时是否回退到线路节点直连；默认关闭，单落地或备选已为直连时不启用 |
+| `enabled` | boolean | 转发总开关，新建默认 `true` |
+
+</div>
+
+编辑时提交完整的线路、落地数组和选路配置；不要把此方法当作仅修改名称或开关的局部更新接口。兼容单个 `landing_inbound_id` 字符串，但推荐统一使用数组。
+
+<div class="plus-settings-table">
+
+| `strategy` | 落地数组与直连选项 |
+| --- | --- |
+| `none` | 使用数组首个落地；对应后台“不启用”选路，仍执行单落地转发 |
+| `failover` | 前两个落地分别为主、备；`backup_direct: true` 时只使用首个主落地，备选为直连。只提交一个落地时也按备选直连处理 |
+| `urltest` | 至少两个落地，按探测延迟选路；不保证平均分配流量 |
+
+</div>
+
+单落地创建示例；示例 ID 需替换为 `inbound.list` 返回的实际入站 ID：
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "admin:nodemgt.chain.upsert",
+  "params": {
+    "name": "精品入口走 Global 内网",
+    "source_inbound_ids": ["source-inbound-id"],
+    "landing_inbound_ids": ["landing-inbound-id"],
+    "strategy": "none",
+    "backup_direct": false,
+    "fallback_direct": false,
+    "enabled": true
+  }
+}
+```
+
+保存返回转发视图，并向相关节点排队下发。需要查询 `control.status` 确认实际生效。
+
+### 查询返回与删除
+
+`chain.list` 可传 `node_uuid`，匹配线路或落地关联该节点的转发；省略时返回全部转发数组。每条记录及 `chain.upsert` 返回值包括：
+
+<div class="plus-settings-table">
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 转发 ID |
+| `name` | string | 转发名称 |
+| `strategy` | string | 归一化后的 `none`、`failover` 或 `urltest` |
+| `backup_direct` | boolean | 是否以直连作为备选 |
+| `fallback_direct` | boolean | 是否在落地均不可用时直连 |
+| `enabled` | boolean | 转发总开关 |
+| `revision` | integer | 配置版本 |
+| `created_at`、`updated_at` | string | 创建、更新时间 |
+| `landing_names`、`source_names` | string[] | 落地、线路名称列表 |
+| `landings` | object[] | 落地关联数组，主备时保留主、备顺序 |
+| `sources` | object[] | 线路关联数组 |
+
+</div>
+
+`landings` 中每项：
+
+<div class="plus-settings-table">
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 落地关联记录 ID，区别于入站 ID |
+| `landing_inbound_id` | string | 落地入站 ID |
+| `landing_name` | string | 落地入站名称 |
+| `landing_node_uuid` | string | 落地节点 UUID |
+| `landing_protocol` | string | 落地协议 |
+| `landing_port` | integer | 落地端口 |
+
+</div>
+
+`sources` 中每项：
+
+<div class="plus-settings-table">
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 线路关联记录 ID，区别于入站 ID |
+| `source_inbound_id` | string | 线路入站 ID |
+| `source_name` | string | 线路入站名称 |
+| `source_node_uuid` | string | 线路节点 UUID |
+| `source_protocol` | string | 线路协议 |
+| `source_port` | integer | 线路端口 |
+| `outbound_id` | string | 关联自动出站 ID |
+| `route_id` | string | 关联自动路由 ID |
+
+</div>
+
+`chain.delete` 只需传 `id`，成功返回 `{"ok":true}`。删除会清理关联自动路由及不再使用的自动出站，并向相关节点下发；不会删除原有入站或普通客户端用户。
+
+### 校验与自动配置
+
+同一线路入站只能属于一条转发，不能同时作为同一条转发的落地，不允许形成环路。线路内核必须支持落地协议；Xray 线路不能连接 Hysteria2、TUIC、AnyTLS 落地。落地分享地址需可用且能被线路节点访问。
+
+线路入站不能同时被手动路由或导入出站占用。自动生成的出站与路由由转发维护，后台普通列表隐藏；接口查询仍可返回这些记录，通过只读 `chain_managed` 识别。修改应使用 `chain.upsert`，删除应使用 `chain.delete`。
+
+常见业务错误文本如下，参数与配置冲突按 RPC2 `InvalidParams` 返回：
+
+<div class="plus-settings-table">
+
+| 错误文本 | 含义 |
+| --- | --- |
+| `chain_landing_required` | 缺少落地入站 |
+| `chain_source_required` | 缺少线路入站 |
+| `chain_pool_required` | 多落地选路至少需要两个落地 |
+| `chain_same_inbound` | 同一入站同时作为本条线路和落地 |
+| `chain_source_in_use` | 线路入站已被其他转发占用 |
+| `chain_cycle` | 配置会构成转发环路 |
+| `chain_core_mismatch` | 线路内核不支持落地协议 |
+| `chain_no_address` | 无法生成落地连接地址 |
+| `chain_route_in_use` | 线路入站已有手动路由引用 |
+| `chain_outbound_in_use` | 线路入站已有导入出站引用 |
+| `chain_in_use` | 手动配置尝试占用已加入转发的线路入站 |
+| `chain_managed` | 尝试单独删除由转发维护的自动出站或路由 |
+
+</div>
+
 ## 出站与路由字段
 
 `admin:nodemgt.outbound.upsert`：
@@ -154,9 +296,11 @@ VLESS 用户的非空 `flow` 覆盖入站默认值，订阅携带最终 Flow。s
 | `domain_strategy` | string | 直连域名策略，如 `AsIs`、`UseIPv4` |
 | `source_inbound_id` | string | 从已有入站导入时的来源记录 |
 
+`outbound.list` 返回只读 `chain_managed`；`true` 表示由“转发”自动管理。该标记不是 `outbound.upsert` 的写入参数。
+
 Shadowsocks 出站的网络也从 `transport` 读取和写入。从入站导入时应携带对应网络，配套 Agent `0.0.2.4` 及以上支持应用此项。
 
-Hysteria2 / TUIC 出站使用以下参数，配套当前 Lite-Plus-agent `0.0.3.1`：
+Hysteria2 / TUIC 出站使用以下参数，配套当前 Lite-Plus-agent `0.0.3.2`：
 
 <div class="plus-settings-table">
 
@@ -184,6 +328,8 @@ Hysteria2 / TUIC 出站使用以下参数，配套当前 Lite-Plus-agent `0.0.3.
 
 路由条件与目标必须属于同一节点。不同非空条件之间为“且”，同一字段中逗号分隔的值为“或”；`network`、`protocol` 为空表示不限。普通域名按后缀匹配，也支持 `domain:`、`full:`、`keyword:`、`regexp:` / `regex:` 和 `geosite:`。中国域名和中国 IP 任一命中即直连时，应拆为两条规则，字段示例见[出站与路由](/plus/forwarding#匹配方式)。
 
+`route.list` 同样返回只读 `chain_managed`。已加入转发的线路入站不能再被手动路由或导入出站引用；落地入站可保留自己的手动路由。
+
 ## 用户与套餐字段
 
 <div class="user-plan-fields-table">
@@ -205,6 +351,8 @@ Hysteria2 / TUIC 出站使用以下参数，配套当前 Lite-Plus-agent `0.0.3.
 </div>
 
 `user.list` 还返回 `quota_bytes`、`used_bytes`、`plan_name`、`inbound_names`、`online`、`online_ips` 等视图字段。`online_ips` 中包含 `ip` 和 `seen_at`，为近期在线信息。套餐更新会影响当前使用它的用户，续费仅延期。
+
+转发自动创建的 `kind: "relay"` 中转身份不会出现在 `user.list` 中，也不生成普通用户订阅；通过转发接口维护关联关系即可。
 
 通过接口创建用户时，`user.upsert` 会自动生成订阅记录和 UUID 连接凭据，响应中的 `secret` 为本次签发的明文凭据，无需再调用 `credential.issue`。编辑用户不会重新签发；需要另行签发或更换时，再使用对应凭据方法。
 

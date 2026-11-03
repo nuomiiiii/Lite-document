@@ -35,6 +35,7 @@ const sidebar = [
       { text: "功能与使用流程", link: "/plus/" },
       { text: "部署与从 Lite 升级", link: "/plus/install" },
       { text: "入站与协议", link: "/plus/inbounds" },
+      { text: "转发", link: "/plus/chains" },
       { text: "出站与路由", link: "/plus/forwarding" },
       { text: "服务器防火墙", link: "/plus/firewall" },
       { text: "用户与套餐", link: "/plus/users" },
