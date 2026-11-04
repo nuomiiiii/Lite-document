@@ -425,6 +425,14 @@ Service Worker 容易跨主题保留旧资源。除非确实需要离线能力�
 
 节点剩余价值可读取 `common:getNodes` 的 `remaining_value` 和 `remaining_value_currency`；登录后管理员头像可读取 `public:getMe` 的 `avatar_url`。字段类型、缺省值和币种说明见 [API 与 RPC2](/development/api#命名空间)。
 
+### 回程线路
+
+需要显示回程线路时，调用 `public:getPublicReturnRoutes`，或兼容 HTTP 入口 `GET /api/task/return-route`。接口不需要查询参数，返回按节点汇总的当前状态；完整字段见[公开回程线路接口](/development/api#公开回程线路)。
+
+先用 `client` 对应节点 UUID，再按 `tasks[].ping_task_id` 与延迟监测任务 ID 匹配，将 `tasks[].line` 显示到对应探测任务上。这里的 ID 是绑定的辅助 Ping 任务 ID，不是回程任务 ID。只需节点级线路摘要时，可使用已去重的 `lines`。
+
+空数组、缺少 `tasks` 或未识别出线路时应隐藏标签；旧服务端返回方法不存在时，也应继续显示原有延迟和丢包。`suspected_blocked` 与 `high_confidence` 是疑似状态，不能显示为已确认封锁；匿名请求过滤隐藏节点，私有站点仍要求登录。主题不应改用管理接口读取完整路径或配置。
+
 ### 私有站点
 
 私有站点登录前仍可能加载当前主题，以保持访问提示与主题风格一致。此时应先读取公开站点信息和当前登录状态；确认未登录后只显示访问提示，不要创建实时 RPC 连接。

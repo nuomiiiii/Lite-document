@@ -26,6 +26,12 @@ Lite 的内部数据库会继续演进，主题和外部集成应使用公共 AP
 
 `/api/nodes` 和对应的 `public:getNodesInformation` 是单独保留的兼容接口。它们对所有调用者固定清空响应中的 `version`、`remark`、`ipv4`、`ipv6`，并在 JSON 中省略这些字段，也不返回 `mcp_full`、`mcp_full_version`；管理员登录或使用 API Key 也不会返回。登录状态只影响这里是否过滤隐藏节点。新主题应优先依赖 `common:getNodes` 的公开字段。
 
+## 回程线路
+
+`public:getPublicReturnRoutes` 与 `GET /api/task/return-route` 提供节点当前线路、辅助 Ping 绑定和疑似被墙状态，不返回目标地址、完整逐跳路径或管理员配置。用 `client` 关联节点，用 `tasks[].ping_task_id` 关联延迟监测任务；该 ID 不是回程任务 ID。
+
+线路为空、没有绑定或旧服务端尚未提供接口时，主题应隐藏对应标签，保留原有监测界面。匿名调用过滤隐藏节点，私有站点需登录；开发者不应通过管理接口或直接读取数据库补齐公共接口未提供的内容。字段与示例见[公开回程线路接口](/development/api#公开回程线路)。
+
 ## 流量口径
 
 第三方主题应区分：

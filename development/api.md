@@ -251,6 +251,45 @@ Lite 提供独立的 `/mcp` 入口。AI 客户端通过浏览器授权选择节�
 
 `bandwidth` 是管理员在服务器设置里填写的展示文案（例如 `100 Mbps`、`1 Gbps`），不是当前实时速率。未填写时为空字符串，主题应直接隐藏，不要显示占位符。实时上传/下载速度仍使用状态接口里的 `net_in_speed` / `net_out_speed`。
 
+### 公开回程线路
+
+`GET /api/task/return-route`，对应 RPC `public:getPublicReturnRoutes`，无需参数。返回可见节点的当前回程线路和疑似被墙状态；匿名请求过滤隐藏节点，私有站点要求登录。
+
+HTTP 成功响应示例：
+
+```json
+{
+  "status": "success",
+  "message": "",
+  "data": [
+    {
+      "client": "节点-uuid",
+      "lines": ["CN2 GIA", "CMIN2"],
+      "tasks": [
+        { "ping_task_id": 12, "line": "CN2 GIA" },
+        { "ping_task_id": 18, "line": "CMIN2" }
+      ]
+    }
+  ]
+}
+```
+
+RPC 的 `result` 直接为上述 `data` 数组。各节点字段如下：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `client` | string | 节点 UUID，用于关联节点资料 |
+| `lines` | string[] | 启用回程任务已识别的当前线路名称，按 IPv4、IPv6 及任务顺序汇总并去重；空值省略 |
+| `tasks` | object[] | 已绑定辅助延迟任务的线路映射，空值省略 |
+| `tasks[].ping_task_id` | number | 辅助 Ping 任务 ID，不是回程任务 ID |
+| `tasks[].line` | string | 该绑定对应的当前线路名称 |
+| `suspected_blocked` | boolean | 当前显示疑似被墙时为 `true`；否则省略 |
+| `high_confidence` | boolean | 高置信度疑似被墙时为 `true`；否则省略，仍不代表已确认封锁 |
+
+没有已识别线路且没有疑似被墙状态的节点不出现在结果中，完全无数据时返回 `[]`。未绑定辅助 Ping 的回程任务仍可贡献 `lines`，但不会产生 `tasks` 映射。同一 Ping 任务被多条回程任务绑定时，只保留排序后的首条映射。
+
+接口只提供当前状态，不包含目标地址、完整逐跳路径、ASN、原始回包或管理员配置。主题应按 `client` 和 `ping_task_id` 对应显示；不能用任务名称猜测关联。旧服务端接口不存在时应隐藏线路标签，保留延迟与丢包展示，接入说明见[主题开发指南](/development/theme#回程线路)。
+
 ### 最近一分钟状态
 
 `GET /api/recent/{uuid}`
@@ -378,6 +417,7 @@ socket.addEventListener("message", (event) => {
 - `public:listMetricDefinitions`
 - `public:queryMetrics`
 - `public:getPingMetricStats`
+- `public:getPublicReturnRoutes`，见[公开回程线路](/development/api#公开回程线路)
 - `common:getNodes`
 - `common:getNodesLatestStatus`
 - `common:getRecords`
@@ -586,6 +626,85 @@ socket.addEventListener("message", (event) => {
 保存会处理整份配置，省略字段可能恢复默认值。只改时区时，应先查询，修改 `timezone` 后提交完整配置。选择非 `custom` 的预制布局会应用该布局的模块、刷新间隔和排行数量；自定义这些项目时请使用 `custom`。
 
 设置接口会校验时区名称和模块配置；无效时区返回参数错误。仪表盘时区不改变账单到期时区、Agent 流量重置时区或定时任务使用的北京时间。
+
+## 回程模板接口
+
+Lite 与 Lite-Plus 共用以下接口，允许管理员登录会话或 API Key 调用。操作入口与模板行为见[使用回程模板](/admin/monitoring#使用回程模板)。模板不绑定节点，应用后生成独立的回程任务。
+
+### HTTP 与 RPC 对照
+
+| HTTP 接口 | RPC 方法 | 参数与返回 |
+| --- | --- | --- |
+| `GET /api/admin/return-route/templates` | `admin:listReturnRouteTemplates` | 无参数，返回模板数组 |
+| `POST /api/admin/return-route/templates/add` | `admin:addReturnRouteTemplate` | 提交模板配置，返回 `{"template_id": 1}` |
+| `POST /api/admin/return-route/templates/edit` | `admin:editReturnRouteTemplate` | 提交 `id` 和完整模板配置，成功无业务返回数据 |
+| `POST /api/admin/return-route/templates/edit/batch` | `admin:batchEditReturnRouteTemplates` | 提交 `ids` 和下述批量字段，成功无业务返回数据 |
+| `POST /api/admin/return-route/templates/delete` | `admin:deleteReturnRouteTemplates` | 提交 `{"ids": [1, 2]}`，成功无业务返回数据 |
+| `POST /api/admin/return-route/templates/apply` | `admin:applyReturnRouteTemplates` | 提交 `template_ids`、`clients` 数组，返回创建、跳过与首次下发数量 |
+
+业务返回值位于 HTTP 的 `data` 或 RPC 的 `result` 中。编辑、批量编辑和删除成功时，HTTP 返回 `status: "success"` 与 `message`，省略 `data`。
+
+### 模板字段
+
+新建和编辑使用以下配置；编辑需同时提交 `id`。编辑为完整配置保存，省略字段不会自动沿用原值。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `name` | string | 必填，模板名称；去除首尾空白后不区分大小写判重 |
+| `carrier` | string | `telecom`、`unicom` 或 `mobile` |
+| `region` | string | 地区标记，可留空 |
+| `target` | string | 必填，探测目标 IP 或域名 |
+| `ip_version` | number | `4` 或 `6` |
+| `expected_line` | string | 必填，`CN2 GIA`、`CN2 GT`、`163`、`CUG VIP`、`CUG 优化`、`9929`、`4837`、`CMIN2`、`CMI` 或 `CMNET` |
+| `protocol` | string | 当前只支持 `icmp`，省略或为空时使用 `icmp` |
+| `interval` | number | 探测间隔，整数 `60–86400` 秒 |
+| `switch_confirm` | number | 切线确认次数，整数 `1–20` |
+| `recovery_confirm` | number | 恢复确认次数，整数 `1–20` |
+| `cooldown` | number | 通知冷却时间，整数 `0–604800` 秒 |
+| `notify` | boolean | 是否发送切线通知 |
+| `notify_recovery` | boolean | 是否发送恢复通知 |
+| `apply_to_new` | boolean | 是否在新建服务器时自动生成任务；不追加到已有服务器 |
+
+查询还返回数字 `id`、时间字段 `created_at`、`updated_at` 和始终为 `true` 的 `enabled`。`enabled` 不用于关闭模板的自动创建；应修改 `apply_to_new`。
+
+模板不包含疑似被墙开关、辅助 Ping 绑定及其通知配置。通过应用接口生成任务后，如需参与判定，应按节点配置生成的任务。
+
+批量编辑需提交非空 `ids` 数组，以及 `region`、`target`、`interval`、`switch_confirm`、`recovery_confirm`、`cooldown`、`notify`、`notify_recovery` 和 `apply_to_new`。这些字段会统一写入所选模板；名称、运营商、地址类型和预期线路保持不变。
+
+### 应用到服务器
+
+通过 HTTP 应用模板：
+
+```http
+POST /api/admin/return-route/templates/apply
+Content-Type: application/json
+Authorization: Bearer <api-key>
+
+{
+  "template_ids": [1, 2],
+  "clients": ["节点-uuid-a", "节点-uuid-b"]
+}
+```
+
+`template_ids` 与 `clients` 均为非空数组，分别使用已有模板 ID 和节点 UUID。每个模板会应用到每个选定节点。成功返回示例：
+
+```json
+{
+  "created": 3,
+  "skipped": 1,
+  "dispatched": 2
+}
+```
+
+| 字段 | 说明 |
+| --- | --- |
+| `created` | 实际创建的任务数 |
+| `skipped` | 因已存在相同探测任务而跳过的数量 |
+| `dispatched` | 成功投递首次探测的任务数，不代表探测成功 |
+
+同一节点、运营商、IP 版本、预期线路和目标地址的组合视为重复，跳过时不覆盖已有任务。任务自动命名为 `服务器名_模板名_V4` 或 `服务器名_模板名_V6`，创建后启用；离线节点待连接后按周期探测。普通回程任务的新建、编辑及批量编辑同样不允许产生重复组合。
+
+编辑或删除模板只影响模板本身，不会改动已生成任务。启用 `apply_to_new` 后仅对后续新建的服务器生效，已有服务器重新上线不会因此再次生成任务。
 
 ## 定时任务接口
 
