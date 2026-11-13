@@ -8,6 +8,8 @@
 
 节点用户凭据、订阅 Token 和 MCP 授权不具备调用权限。这里的 API Key 支持范围仅指本页节点管理方法，不扩大共用手册中账号安全、主题、备份和远程授权等接口的权限。
 
+服务防护使用单独的管理员会话接口，参数与 HTTP / RPC2 对照见[服务防护接口](/plus/protection-api)。
+
 - 容量、已用量、加量字段使用整数**字节**。
 - `rate_limit_bps` 使用整数 **bit/s**，例如 `10000000` 表示 `10 Mbit/s`，与通用监控速率字段的字节/秒不同。
 - `device_limit` 表示每节点并发来源 IP 上限，`0` 不限制。
@@ -64,9 +66,10 @@
 | `control.status` | 可选 `node_uuid` | 单节点状态对象；未指定节点时返回数组 |
 | `control.sync` | 可选 `node_uuid` | 尝试投递待下发命令 |
 | `diag.status` | 可选 `node_uuid` | 待下发命令、最新结果及内核信息 |
-| `audit.list` | 可选 `limit` | 操作者、动作、目标与时间 |
 
 分配、续费和加量重试时，复用同一个 `operation_id`，避免重复记账。没有已有套餐分配的用户不能调用续费完成延期。
+
+原 `admin:nodemgt.audit.list` 已移除。节点管理操作记录改用 `GET /api/admin/logs?msg_type=nodemgt`，支持分页、搜索和日期筛选，详见[管理日志查询](/development/api#管理日志查询)。
 
 ## 查询示例
 
@@ -309,7 +312,7 @@ VLESS 用户的非空 `flow` 覆盖入站默认值，订阅携带最终 Flow。s
 
 Shadowsocks 出站的网络也从 `transport` 读取和写入。从入站导入时应携带对应网络，配套 Agent `0.0.2.4` 及以上支持应用此项。
 
-Hysteria2 / TUIC 出站使用以下参数，配套当前 Lite-Plus-agent `0.0.3.2`：
+Hysteria2 / TUIC 出站使用以下参数，配套当前 Lite-Plus-agent `0.2.0.0`：
 
 <div class="plus-settings-table">
 

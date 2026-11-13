@@ -55,7 +55,7 @@ logread -e lite-plus
 ```yaml
 services:
   lite-plus:
-    image: ghcr.io/nuomiiiii/lite-plus:0.1.6
+    image: ghcr.io/nuomiiiii/lite-plus:0.2.0
     container_name: lite-plus
     restart: unless-stopped
     ports:
@@ -77,7 +77,7 @@ docker compose up -d
 ## Docker 从 Lite 升级
 
 1. 停止原 Lite 容器，备份原程序信息及完整宿主机 `data` 目录；外部监控数据库另外备份。
-2. 在原编排中将镜像改为 `ghcr.io/nuomiiiii/lite-plus:0.1.6`。
+2. 在原编排中将镜像改为 `ghcr.io/nuomiiiii/lite-plus:0.2.0`。
 3. 保持原有 `data` 挂载、端口、环境变量和证书挂载，沿用原入口重新创建容器。
 4. 确认原账号、节点、历史数据和 HTTPS 可用，再进入新增的“节点管理”。
 
@@ -112,14 +112,14 @@ Windows 下载对应产物后，在 PowerShell 中运行：
 
 ## 安装或迁移 Plus Agent
 
-节点管理需要 Lite-Plus-agent，当前项目基线为 `0.0.3.2`。先在 Plus“服务器 → 节点配置 → 部署指令”选择系统与安装选项，再复制完整命令执行；不要使用 Lite-agent 的下载源代替。
+节点管理需要 Lite-Plus-agent，当前项目基线为 `0.2.0.0`。先在 Plus“服务器 → 节点配置 → 部署指令”选择系统与安装选项，再复制完整命令执行；不要使用 Lite-agent 的下载源代替。
 
 | 项目 | 默认值 |
 | --- | --- |
 | Linux 服务名 | `lite-plus-agent` |
 | Linux 安装目录 | `/opt/lite-plus-agent` |
 | 程序 | `/opt/lite-plus-agent/Lite-Plus-agent` |
-| Docker 镜像 | `ghcr.io/nuomiiiii/lite-plus-agent:0.0.3.2` |
+| Docker 镜像 | `ghcr.io/nuomiiiii/lite-plus-agent:0.2.0.0` |
 
 已有 Lite-agent 时，在原节点执行 Plus 后台为**原节点**生成的部署指令，保留原节点 Token 与面板地址。默认布局可迁入 Plus 目录与服务名；自定义目录、服务名和证书挂载应按原部署核对。
 
@@ -131,11 +131,11 @@ curl -fsSL https://raw.githubusercontent.com/nuomiiiii/Lite-Plus-agent/main/migr
 
 主控地址发生变化时，在执行脚本的末尾追加 `--endpoint "https://新的主控地址"`。不要传入新的 Token。Docker 节点保留 endpoint、Token 和状态目录挂载，改用 Plus Agent 镜像重新创建容器。
 
-节点管理的配置通道与浏览器远程终端分开。需要防火墙、入站联动放行、终端、文件、远程执行或 MCP 时，仍按共用手册同时开启站点和 Agent 远程控制开关并完成授权。防火墙还需 Agent 具备管理主机规则的权限，见[服务器防火墙](/plus/firewall)。
+节点管理的配置通道与浏览器远程终端分开。需要防火墙、服务防护、入站联动放行、终端、文件、远程执行或 MCP 时，仍按共用手册同时开启站点和 Agent 远程控制开关并完成授权。防火墙还需 Agent 具备管理主机规则的权限，见[服务器防火墙](/plus/firewall)。服务防护另需在 Linux 节点完成[环境检查与启用](/plus/protection#environment)。
 
 ## 备份与更新
 
-Plus 节点管理配置、节点出站地址族、防火墙配置、用户、套餐、订阅、订阅模板及其绑定、计量记录保存在主数据库中。根域名证书的证书链和加密私钥也保存在主库中，应连同实例密钥使用完整备份保存。面板复用根证书导出的文件位于 `data/tls/root/`，随完整数据目录备份。
+Plus 节点管理配置、节点出站地址族、防火墙与服务防护配置、联动组、用户、套餐、订阅、订阅模板及其绑定、计量记录保存在主数据库中。根域名证书的证书链和加密私钥也保存在主库中，应连同实例密钥使用完整备份保存。面板复用根证书导出的文件位于 `data/tls/root/`，随完整数据目录备份。
 
 “主控申请”由 Agent 生成的节点私钥、节点外部证书文件和 Agent 本地状态仍需单独备份。外部监控数据库也需单独备份。后续服务端更新使用 Plus 的 Release 或镜像，Agent 更新使用 Plus-agent 仓库；共用的检查与回退步骤见[更新与数据库迁移](/install/update)。
 
@@ -146,7 +146,7 @@ Plus 节点管理配置、节点出站地址族、防火墙配置、用户、套
 - Shadowsocks SS2022 重新导入完整订阅或分享链接；修改出站协议后核对对应凭据。
 - 订阅的“对外地址”是否为实际访问地址，泛域名证书应填写具体订阅主机名。开关“复用内置 HTTPS”不会自动补全此值。
 - 配置非零订阅监听端口后，面板 HTTP / HTTPS 入口不再提供订阅。出现 `404` 时，检查订阅反向代理是否回源到独立端口，见[配置订阅入口](/plus/subscriptions#配置订阅入口)。
-- 服务端与后台更新到 `0.1.6`，配套 Agent 更新到 `0.0.3.2`。使用 Hysteria2 / TUIC 出站时选择 sing-box，核对目标密码、TUIC UUID 和 TLS 参数，并重新获取分享链接或订阅。
+- 服务端与后台更新到 `0.2.0`，配套 Agent 更新到 `0.2.0.0`。使用 Hysteria2 / TUIC 出站时选择 sing-box，核对目标密码、TUIC UUID 和 TLS 参数，并重新获取分享链接或订阅。
 - 使用[转发](/plus/chains)时，检查线路、落地入站及选路方式，等待相关节点“已生效”；已有手动出站和路由时，先解除线路入站的占用，再切换为自动转发。
 - 使用[路由主备](/plus/forwarding#主备出站)时，核对主、备出站及直连回退设置；自动生成的选路出站组由对应路由管理。
 - 编辑入站时，核对节点已上报的 IPv4 / IPv6、地址栈和公开端口；未填写公开端口时沿用监听端口。Shadowsocks 的 TCP / UDP 网络和 sing-box UDP 分片按原用途检查。

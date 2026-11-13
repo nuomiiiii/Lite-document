@@ -44,6 +44,7 @@ Lite 同时保留兼容 HTTP API，并提供 JSON-RPC 2.0 入口。新主题和�
 | 查看主题管理列表，安装、更新、配置、删除或切换主题 | `/api/admin/theme/*`；RPC `admin:editSettings` 中的 `theme` 字段 |
 | 修改自定义 HTML | RPC `admin:editSettings` 中的 `custom_head`、`custom_body` 字段 |
 | 查询或管理定时任务、执行日志与远程命令结果 | `/api/admin/scheduled-exec*`、`/api/admin/task*`；对应的定时任务和任务结果 RPC 方法 |
+| 服务防护与联动组 <PlusBadge /> | `/api/admin/protection/*`、`/api/admin/protection-groups*`；对应服务防护 RPC 方法，见[接口说明](/plus/protection-api) |
 
 上述请求被拒绝时，备份、上传、账号和主题的 HTTP 接口返回 `403`，设置 HTTP 接口当前返回 `401`；直接调用对应 RPC 方法会返回权限不足错误 `-32041`。附带管理员密码或 2FA 验证码也不能把 API Key 变成管理员登录会话。
 
@@ -550,6 +551,8 @@ socket.addEventListener("message", (event) => {
 | `day` | 以逗号分隔的 UTC 日期，格式为 `YYYY-MM-DD` |
 
 响应的 `data` 包含 `logs`、`total`、`types` 和 `days`。`types`、`days` 是全部日志的可选筛选项及记录数，不受当前分页限制；管理后台据此显示组合筛选。
+
+<PlusBadge /> 节点管理操作已合并到此接口，使用 `msg_type=nodemgt` 筛选。记录沿用 `id`、`ip`、`uuid`、`message`、`msg_type`、`time` 字段；旧节点管理审计接口 `admin:nodemgt.audit.list` 已移除。`message` 可能为带 `k`、`p`、`s` 的结构化审计内容，分别保存消息键、参数和检索内容，展示时应按当前语言解析，而非直接输出原始 JSON。
 
 成本中心管理方法包括 `admin:getBillingOverview`、`admin:getBillingServers`、`admin:getBillingMonthly`、`admin:getBillingYearly`、`admin:getBillingEntries`、`admin:createBillingTrafficReset`、`admin:createBillingIPChange`、`admin:createBillingOneTimeFee` 和 `admin:voidBillingEntry`。这些方法需要管理员权限，属于随后台演进的管理接口，不是匿名主题 API。
 

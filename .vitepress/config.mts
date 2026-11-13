@@ -38,6 +38,7 @@ const sidebar = [
       { text: "转发", link: "/plus/chains" },
       { text: "出站与路由", link: "/plus/forwarding" },
       { text: "服务器防火墙", link: "/plus/firewall" },
+      { text: "服务防护", link: "/plus/protection" },
       { text: "用户与套餐", link: "/plus/users" },
       { text: "节点证书", link: "/plus/certificates" },
       { text: "订阅与外部链接", link: "/plus/subscriptions" },
